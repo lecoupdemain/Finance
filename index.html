@@ -211,7 +211,7 @@
     </div>
 
     <script>
-        const storageKey = 'cohen_encyclopedia_v15';
+        const storageKey = 'cohen_final_v16';
         let data = JSON.parse(localStorage.getItem(storageKey)) || { 
             totalTreasure: 0, 
             currentSpend: 0, 
@@ -221,68 +221,7 @@
 
         let isSafeOpen = false;
 
-        // --- BIBLIOTHÈQUE DE 60 ANECDOTES ---
         const anecdotes = [
-            "Le savais-tu ? L'empreinte de la truffe d'Hurricane est unique, comme une empreinte digitale ! 👃",
-            "Les chiens 'sentent' le temps : ils détectent la baisse de ton odeur pour savoir quand tu rentres. 🕰️",
-            "Si Gears remue la queue vers la droite, il est heureux. Vers la gauche ? Il est inquiet ! 🐕",
-            "Les chiens comprennent environ 165 mots (le niveau d'un enfant de 2 ans) ! 🧠",
-            "Pourquoi leurs coussinets sentent le pop-corn ? C'est à cause d'une petite bactérie inoffensive ! 🍿",
-            "Si tu bâilles et qu'Eira bâille aussi, ce n'est pas la fatigue, c'est de l'empathie ! ❤️",
-            "Un chien entend des sons à une distance 4 fois supérieure à celle d'un humain. 👂",
-            "Les chiens voient en bleu et jaune. Ta balle rouge ? Pour eux, elle est grisâtre ! 🎾",
-            "Les chiens n'ont pas la notion d'argent, mais ils sentent quand tu es stressée par le budget. Zen ! 🧘‍♀️",
-            "Caresser un chien fait baisser ta tension artérielle immédiatement. C'est magique. 💓",
-            "Ton odeur active le 'centre de la récompense' dans le cerveau de tes chiens. Tu es leur drogue ! 😍",
-            "Les chiens dorment en boule pour protéger leurs organes vitaux... un vieil instinct de loup ! 🐺",
-            "Un chien mouillé ne sent pas mauvais pour lui... c'est même un parfum de victoire ! 💦",
-            "Gears peut sentir tes émotions grâce à ta transpiration. Il sait si tu as peur ou si tu es heureuse ! 🕵️‍♂️",
-            "Les moustaches (vibrisses) leur servent à 'voir' dans le noir en sentant les courants d'air. 🌙",
-            "Boire de l'eau, c'est gratuit et ça fait une belle peau. Eira valide cette astuce beauté ! 💧",
-            "Chaque euro économisé aujourd'hui est un petit bout de liberté pour demain. 🚀",
-            "Le chien est le seul animal qui t'aime plus qu'il ne s'aime lui-même. 📜",
-            "L'épargne, c'est comme le dressage : ça demande de la patience, mais ça paye ! 🎓",
-            "Regarder ses chiens jouer est plus relaxant que n'importe quelle série Netflix. 📺",
-            "Les chiens ont trois paupières ! La troisième sert à protéger l'œil et à le garder humide. 👁️",
-            "La nuit, les yeux des chiens brillent grâce au 'tapetum lucidum', un miroir naturel derrière la rétine. 🔦",
-            "Un chien peut localiser la source d'un bruit en 6 centièmes de seconde. Radar sur pattes ! 📡",
-            "Le basenji est la seule race de chien qui ne peut pas aboyer. Mais Hurricane n'est pas un basenji ! 📢",
-            "Les chiens transpirent uniquement par les coussinets de leurs pattes. 🐾",
-            "45% des chiens dorment dans le lit de leur maître. On ne jugera pas Myriam... 🛏️",
-            "Le chocolat est dangereux pour eux, mais pour toi, un petit carré ne coûte pas cher et fait du bien ! 🍫",
-            "Un chien adulte a 42 dents. Toi tu n'en as que 32. Ils gagnent sur ce coup-là ! 🦷",
-            "Gérer son budget, c'est s'offrir la tranquillité d'esprit pour profiter des balades. 🌳",
-            "Le plus vieux chien du monde a vécu 29 ans. Imagine combien de croquettes ça fait ! 🏆",
-            "Les chiens n'aiment pas qu'on leur touche la tête par le dessus (signe de dominance), ils préfèrent le côté ! 👋",
-            "Quand un chien s'appuie contre ta jambe, c'est pour te dire 'Je suis là, protège-moi' ou 'Je te protège'. 🛡️",
-            "Les dalmatiens naissent tout blancs, les taches arrivent après. Comme tes économies : ça grandit petit à petit ! ⚪",
-            "Un chien peut apprendre à compter jusqu'à 5. Hurricane peut sûrement compter les friandises ! 1️⃣",
-            "La truffe d'un chien est humide pour mieux capter les molécules d'odeur dans l'air. 💧",
-            "Les chiens rêvent comme nous ! S'ils bougent les pattes en dormant, ils poursuivent un lapin imaginaire. 🐇",
-            "Investir en soi-même est le meilleur rendement possible. Apprends, lis, repose-toi. 📚",
-            "Si tu te sens pauvre, regarde tes chiens. Avec leur amour, tu es milliardaire. 💎",
-            "Les oreilles de Gears sont contrôlées par 18 muscles différents. Il peut les orienter comme des paraboles ! 📡",
-            "L'obésité est le problème n°1 des chiens modernes. Moins de friandises = plus de santé (et d'économies) ! ⚖️",
-            "Un chien heureux remue la queue de façon large, engageant tout son arrière-train. La fameuse 'danse du popotin' ! 💃",
-            "Planifier ses repas à l'avance est l'astuce n°1 pour économiser sur les courses. 🍲",
-            "L'achat impulsif te donne de la dopamine pour 5 minutes. L'épargne te donne de la sérénité pour 5 ans. 🧘",
-            "Les chiens préfèrent les voix aigües et douces. C'est pour ça qu'on leur parle comme à des bébés ! 👶",
-            "Le contact visuel avec Eira libère de l'ocytocine chez toi ET chez elle. C'est chimique ! 🧪",
-            "Un chien fatigué est un chien heureux. Une bonne balade gratuite vaut mieux qu'un jouet cher. 🎾",
-            "Ne jamais faire les courses le ventre vide. Règle d'or pour ne pas craquer ! 🛒",
-            "Les chiens peuvent être droitiers ou gauchers (ou droitiers/gauchers de la patte). Observe-les ! ✋",
-            "Le ronflement de ton chien est la meilleure berceuse du monde (ou pas). 💤",
-            "La règle des 24h : avant d'acheter un truc cher, attends 24h. Souvent, l'envie passe. ⏳",
-            "Les chiens sentent la maladie. Ils sont nos gardiens invisibles. 🚑",
-            "L'argent ne fait pas le bonheur, mais il achète les croquettes, donc c'est quand même important. 🍗",
-            "Faire ses comptes, c'est prendre le pouvoir sur sa vie. Tu es la patronne ! 👩‍💼",
-            "Les chiens n'ont pas de regrets du passé ni de peur du futur. Ils vivent l'instant présent. Sois comme eux. ✨",
-            "Un petit café maison coûte 0,20€. En terrasse : 2,50€. Le choix est vite fait pour le trésor ! ☕",
-            "Si tu as un doute sur un achat, demande-toi : 'Est-ce que Hurricane validerait ça ?' 🤔",
-            "Le bonheur, c'est un rayon de soleil, un chien qui dort et un compte en banque positif. ☀️",
-            "Les chiens de petite taille vivent souvent plus longtemps que les grands. Profite de chaque instant ! ⏳",
-            "Tu es la personne préférée de ton chien dans l'univers entier. Ne l'oublie jamais. 🌍",
-            "Bravo ! Tu as lu toutes les anecdotes. Tu es une experte canine et financière maintenant ! 🎓"
             "L'empreinte de la truffe d'un chien est unique au monde, exactement comme une empreinte digitale humaine.",
             "Les chiens 'sentent' le temps qui passe grâce à la diminution de ton odeur dans la maison au fil des heures.",
             "Une étude prouve que si un chien remue la queue vers la droite, il est heureux. Vers la gauche, il est anxieux.",
@@ -347,17 +286,15 @@
 
         const dogMessages = ["T'inquiète, on gère !", "Pas de panique !", "Hurricane valide !", "Miam, croquettes ?", "On t'aime !", "C'est noté !", "Gears surveille...", "Belle gestion !", "Wouf Wouf ! 🐾"];
 
-        // --- FONCTION DE SÉLECTION INTELLIGENTE ---
         function getDailyAnecdote() {
             const now = new Date();
             const start = new Date(now.getFullYear(), 0, 0);
             const diff = now - start;
             const oneDay = 1000 * 60 * 60 * 24;
             const dayOfYear = Math.floor(diff / oneDay);
-            return anecdotes[dayOfYear % anecdotes.length]; // Boucle sur les 60 phrases
+            return anecdotes[dayOfYear % anecdotes.length]; 
         }
 
-        // --- GESTION DU COFFRE ---
         function toggleSafeDisplay() {
             isSafeOpen = !isSafeOpen;
             const icon = document.getElementById('safe-icon');
@@ -406,7 +343,6 @@
             if(remaining <= 0) dogs.forEach(d => d.classList.add('sad-dog'));
             else dogs.forEach(d => d.classList.remove('sad-dog'));
 
-            // Utilisation de la nouvelle fonction pour choisir l'anecdote
             document.getElementById('anecdote').innerText = "💡 " + getDailyAnecdote();
 
             const isSaturday = now.getDay() === 6;
@@ -555,6 +491,3 @@
     </script>
 </body>
 </html>
-
-
-
