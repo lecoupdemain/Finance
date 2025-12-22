@@ -28,34 +28,37 @@
             position: relative; z-index: 2;
         }
 
-        /* --- SECTION CHIENS --- */
-        .dogs-row { display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; }
+        /* --- SECTION CHIENS & BULLE --- */
+        .dogs-container { position: relative; margin-bottom: 10px; }
+        .dogs-row { display: flex; justify-content: center; gap: 15px; }
         .dog-thumb { 
             width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--main-green); 
             object-fit: cover; transition: all 0.5s ease; 
         }
         .sad-dog { filter: grayscale(100%) brightness(0.8); transform: scale(0.9); border-color: #ff4444; }
 
-        /* --- COFFRE FORT (NOUVEAU) --- */
-        .safe-box {
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 15px;
-            transition: transform 0.2s;
-            user-select: none;
+        .dog-bubble {
+            position: absolute; top: -35px; left: 50%; transform: translateX(-50%) scale(0);
+            background: white; color: black; padding: 8px 15px; border-radius: 15px;
+            font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10; pointer-events: none;
+            min-width: 120px;
         }
-        .safe-box:active { transform: scale(0.95); }
-        
-        .safe-icon { font-size: 3.5rem; display: block; margin-bottom: 5px; text-shadow: 0 0 20px rgba(255, 204, 0, 0.4); }
-        
-        .treasure-val { 
-            font-size: 3.2rem; color: var(--main-green); font-weight: 800; margin: 5px 0; 
-            letter-spacing: -1px; text-shadow: 0 0 20px rgba(0,255,136,0.3);
-            display: none; /* Caché par défaut */
+        .dog-bubble::after {
+            content: ''; position: absolute; bottom: -6px; left: 50%; margin-left: -6px;
+            border-width: 6px 6px 0; border-style: solid; border-color: white transparent transparent transparent;
         }
-        
-        .safe-label { font-size: 0.9rem; color: #aaa; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; }
+        .bubble-visible { transform: translateX(-50%) scale(1); }
 
+        /* --- COFFRE FORT --- */
+        .safe-box { cursor: pointer; padding: 10px; border-radius: 15px; transition: transform 0.2s; user-select: none; }
+        .safe-box:active { transform: scale(0.95); }
+        .safe-icon { font-size: 3.5rem; display: block; margin-bottom: 5px; text-shadow: 0 0 20px rgba(255, 204, 0, 0.4); }
+        .treasure-val { 
+            font-size: 3.2rem; color: var(--main-gold); font-weight: 800; margin: 5px 0; 
+            letter-spacing: -1px; text-shadow: 0 0 20px rgba(255,204,0,0.3); display: none; 
+        }
+        .safe-label { font-size: 0.9rem; color: #aaa; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; }
         .date-display { font-size: 0.85rem; color: #00d4ff; font-weight: 700; text-transform: capitalize; opacity: 0.9; margin-bottom: 10px; }
 
         /* --- JAUGE BATTERIE --- */
@@ -64,6 +67,13 @@
             margin: 15px 0; background: rgba(0,0,0,0.6); overflow: hidden; position: relative; 
         }
         .battery-fill { height: 100%; width: 100%; transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1); background: var(--main-green); }
+        
+        @keyframes blink-red {
+            0% { opacity: 1; background: #ff4444; box-shadow: 0 0 5px #ff4444; }
+            50% { opacity: 0.6; background: #ff0000; box-shadow: 0 0 15px #ff0000; }
+            100% { opacity: 1; background: #ff4444; box-shadow: 0 0 5px #ff4444; }
+        }
+        .critical-blink { animation: blink-red 1s infinite; }
 
         /* --- INPUTS --- */
         .input-row { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; }
@@ -132,17 +142,20 @@
 <body>
 
     <div class="card">
-        <div class="dogs-row">
-            <img src="hurricane.png" id="img-hurricane" class="dog-thumb">
-            <img src="gears.png" id="img-gears" class="dog-thumb">
-            <img src="eira.png" id="img-eira" class="dog-thumb">
+        <div class="dogs-container">
+            <div id="dog-bubble" class="dog-bubble">Wouf !</div>
+            <div class="dogs-row">
+                <img src="hurricane.png" id="img-hurricane" class="dog-thumb">
+                <img src="gears.png" id="img-gears" class="dog-thumb">
+                <img src="eira.png" id="img-eira" class="dog-thumb">
+            </div>
         </div>
         <div id="date-info" class="date-display"></div>
 
         <div class="safe-box" onclick="toggleSafeDisplay()">
             <span id="safe-icon" class="safe-icon">🔐</span>
             <div class="treasure-val" id="total-display">0 €</div>
-            <div class="safe-label" id="safe-label">Coffre Secret</div>
+            <div class="safe-label" id="safe-label">Coffre Secret (Gains)</div>
         </div>
 
         <div id="grade" style="padding: 5px 15px; border-radius: 20px; display: inline-block; background: var(--main-green); color: #000; font-weight: 800; font-size: 0.75rem; margin-top: 10px;">Reine du Budget</div>
@@ -186,13 +199,11 @@
         <div style="text-align:center; width: 100%;">
             <h2 id="slot-title" style="color:var(--main-gold); font-size: 2.2rem; margin-bottom:10px; text-shadow: 0 0 10px #ff9900;">JACKPOT +10€</h2>
             <p style="color:#ddd; margin-bottom:20px; font-size:0.9rem;">Aligne 3 symboles identiques pour gagner !</p>
-            
             <div class="slot-machine-container" id="machine-container">
                 <div id="r1" class="reel">❓</div>
                 <div id="r2" class="reel">❓</div>
                 <div id="r3" class="reel">❓</div>
             </div>
-
             <button onclick="spin()" id="spin-btn" style="margin-top:30px; padding:18px 50px; border-radius:40px; background:var(--main-gold); color:black; font-weight:900; font-size:1.3rem; border:none; box-shadow: 0 5px 0 #b8860b; transition: transform 0.1s;">TIRER LE LEVIER !</button>
             <p id="slot-msg" style="margin-top:25px; color:white; min-height: 30px; font-weight:bold; font-size:1.1rem;"></p>
             <button onclick="closeSlot()" style="margin-top:20px; color:#aaa; background:none; border:none; text-decoration:underline;">Fermer et revenir</button>
@@ -200,10 +211,9 @@
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        const storageKey = 'cohen_safe_v12'; // Nouvelle clé = RESET à 0€
+        const storageKey = 'cohen_encyclopedia_v15';
         let data = JSON.parse(localStorage.getItem(storageKey)) || { 
-            totalTreasure: 0, // DÉMARRAGE À ZÉRO
+            totalTreasure: 0, 
             currentSpend: 0, 
             history: [], 
             lastBonusDate: null 
@@ -211,16 +221,81 @@
 
         let isSafeOpen = false;
 
+        // --- BIBLIOTHÈQUE DE 60 ANECDOTES ---
         const anecdotes = [
-            "Le savais-tu ? L'empreinte de la truffe d'Hurricane est unique, exactement comme une empreinte digitale ! 👃",
-            "Les chiens 'sentent' le temps : ils détectent la baisse de ton odeur dans la maison pour savoir quand tu vas rentrer. 🕰️",
+            "Le savais-tu ? L'empreinte de la truffe d'Hurricane est unique, comme une empreinte digitale ! 👃",
+            "Les chiens 'sentent' le temps : ils détectent la baisse de ton odeur pour savoir quand tu rentres. 🕰️",
             "Si Gears remue la queue vers la droite, il est heureux. Vers la gauche ? Il est inquiet ! 🐕",
-            "Les chiens ont un vocabulaire d'environ 165 mots (comme un enfant de 2 ans) ! 🧠",
-            "Pourquoi leurs coussinets sentent le pop-corn ? C'est à cause d'une bactérie inoffensive (Pseudomonas) ! 🍿",
-            "Si tu bâilles et qu'Eira bâille aussi, ce n'est pas la fatigue, c'est de l'empathie envers toi ! ❤️",
-            "Un chien peut entendre des sons à une distance 4 fois supérieure à celle d'un humain. 👂",
-            "Les chiens ne voient pas en noir et blanc, mais en bleu et jaune. Ta balle rouge ? Pour eux, elle est grisâtre ! 🎾"
+            "Les chiens comprennent environ 165 mots (le niveau d'un enfant de 2 ans) ! 🧠",
+            "Pourquoi leurs coussinets sentent le pop-corn ? C'est à cause d'une petite bactérie inoffensive ! 🍿",
+            "Si tu bâilles et qu'Eira bâille aussi, ce n'est pas la fatigue, c'est de l'empathie ! ❤️",
+            "Un chien entend des sons à une distance 4 fois supérieure à celle d'un humain. 👂",
+            "Les chiens voient en bleu et jaune. Ta balle rouge ? Pour eux, elle est grisâtre ! 🎾",
+            "Les chiens n'ont pas la notion d'argent, mais ils sentent quand tu es stressée par le budget. Zen ! 🧘‍♀️",
+            "Caresser un chien fait baisser ta tension artérielle immédiatement. C'est magique. 💓",
+            "Ton odeur active le 'centre de la récompense' dans le cerveau de tes chiens. Tu es leur drogue ! 😍",
+            "Les chiens dorment en boule pour protéger leurs organes vitaux... un vieil instinct de loup ! 🐺",
+            "Un chien mouillé ne sent pas mauvais pour lui... c'est même un parfum de victoire ! 💦",
+            "Gears peut sentir tes émotions grâce à ta transpiration. Il sait si tu as peur ou si tu es heureuse ! 🕵️‍♂️",
+            "Les moustaches (vibrisses) leur servent à 'voir' dans le noir en sentant les courants d'air. 🌙",
+            "Boire de l'eau, c'est gratuit et ça fait une belle peau. Eira valide cette astuce beauté ! 💧",
+            "Chaque euro économisé aujourd'hui est un petit bout de liberté pour demain. 🚀",
+            "Le chien est le seul animal qui t'aime plus qu'il ne s'aime lui-même. 📜",
+            "L'épargne, c'est comme le dressage : ça demande de la patience, mais ça paye ! 🎓",
+            "Regarder ses chiens jouer est plus relaxant que n'importe quelle série Netflix. 📺",
+            "Les chiens ont trois paupières ! La troisième sert à protéger l'œil et à le garder humide. 👁️",
+            "La nuit, les yeux des chiens brillent grâce au 'tapetum lucidum', un miroir naturel derrière la rétine. 🔦",
+            "Un chien peut localiser la source d'un bruit en 6 centièmes de seconde. Radar sur pattes ! 📡",
+            "Le basenji est la seule race de chien qui ne peut pas aboyer. Mais Hurricane n'est pas un basenji ! 📢",
+            "Les chiens transpirent uniquement par les coussinets de leurs pattes. 🐾",
+            "45% des chiens dorment dans le lit de leur maître. On ne jugera pas Myriam... 🛏️",
+            "Le chocolat est dangereux pour eux, mais pour toi, un petit carré ne coûte pas cher et fait du bien ! 🍫",
+            "Un chien adulte a 42 dents. Toi tu n'en as que 32. Ils gagnent sur ce coup-là ! 🦷",
+            "Gérer son budget, c'est s'offrir la tranquillité d'esprit pour profiter des balades. 🌳",
+            "Le plus vieux chien du monde a vécu 29 ans. Imagine combien de croquettes ça fait ! 🏆",
+            "Les chiens n'aiment pas qu'on leur touche la tête par le dessus (signe de dominance), ils préfèrent le côté ! 👋",
+            "Quand un chien s'appuie contre ta jambe, c'est pour te dire 'Je suis là, protège-moi' ou 'Je te protège'. 🛡️",
+            "Les dalmatiens naissent tout blancs, les taches arrivent après. Comme tes économies : ça grandit petit à petit ! ⚪",
+            "Un chien peut apprendre à compter jusqu'à 5. Hurricane peut sûrement compter les friandises ! 1️⃣",
+            "La truffe d'un chien est humide pour mieux capter les molécules d'odeur dans l'air. 💧",
+            "Les chiens rêvent comme nous ! S'ils bougent les pattes en dormant, ils poursuivent un lapin imaginaire. 🐇",
+            "Investir en soi-même est le meilleur rendement possible. Apprends, lis, repose-toi. 📚",
+            "Si tu te sens pauvre, regarde tes chiens. Avec leur amour, tu es milliardaire. 💎",
+            "Les oreilles de Gears sont contrôlées par 18 muscles différents. Il peut les orienter comme des paraboles ! 📡",
+            "L'obésité est le problème n°1 des chiens modernes. Moins de friandises = plus de santé (et d'économies) ! ⚖️",
+            "Un chien heureux remue la queue de façon large, engageant tout son arrière-train. La fameuse 'danse du popotin' ! 💃",
+            "Planifier ses repas à l'avance est l'astuce n°1 pour économiser sur les courses. 🍲",
+            "L'achat impulsif te donne de la dopamine pour 5 minutes. L'épargne te donne de la sérénité pour 5 ans. 🧘",
+            "Les chiens préfèrent les voix aigües et douces. C'est pour ça qu'on leur parle comme à des bébés ! 👶",
+            "Le contact visuel avec Eira libère de l'ocytocine chez toi ET chez elle. C'est chimique ! 🧪",
+            "Un chien fatigué est un chien heureux. Une bonne balade gratuite vaut mieux qu'un jouet cher. 🎾",
+            "Ne jamais faire les courses le ventre vide. Règle d'or pour ne pas craquer ! 🛒",
+            "Les chiens peuvent être droitiers ou gauchers (ou droitiers/gauchers de la patte). Observe-les ! ✋",
+            "Le ronflement de ton chien est la meilleure berceuse du monde (ou pas). 💤",
+            "La règle des 24h : avant d'acheter un truc cher, attends 24h. Souvent, l'envie passe. ⏳",
+            "Les chiens sentent la maladie. Ils sont nos gardiens invisibles. 🚑",
+            "L'argent ne fait pas le bonheur, mais il achète les croquettes, donc c'est quand même important. 🍗",
+            "Faire ses comptes, c'est prendre le pouvoir sur sa vie. Tu es la patronne ! 👩‍💼",
+            "Les chiens n'ont pas de regrets du passé ni de peur du futur. Ils vivent l'instant présent. Sois comme eux. ✨",
+            "Un petit café maison coûte 0,20€. En terrasse : 2,50€. Le choix est vite fait pour le trésor ! ☕",
+            "Si tu as un doute sur un achat, demande-toi : 'Est-ce que Hurricane validerait ça ?' 🤔",
+            "Le bonheur, c'est un rayon de soleil, un chien qui dort et un compte en banque positif. ☀️",
+            "Les chiens de petite taille vivent souvent plus longtemps que les grands. Profite de chaque instant ! ⏳",
+            "Tu es la personne préférée de ton chien dans l'univers entier. Ne l'oublie jamais. 🌍",
+            "Bravo ! Tu as lu toutes les anecdotes. Tu es une experte canine et financière maintenant ! 🎓"
         ];
+
+        const dogMessages = ["T'inquiète, on gère !", "Pas de panique !", "Hurricane valide !", "Miam, croquettes ?", "On t'aime !", "C'est noté !", "Gears surveille...", "Belle gestion !", "Wouf Wouf ! 🐾"];
+
+        // --- FONCTION DE SÉLECTION INTELLIGENTE ---
+        function getDailyAnecdote() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 0);
+            const diff = now - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            const dayOfYear = Math.floor(diff / oneDay);
+            return anecdotes[dayOfYear % anecdotes.length]; // Boucle sur les 60 phrases
+        }
 
         // --- GESTION DU COFFRE ---
         function toggleSafeDisplay() {
@@ -234,22 +309,20 @@
                 val.style.display = "block";
                 icon.style.display = "none";
                 label.innerText = "Cagnotte Disponible";
-                label.style.color = "#00ff88";
+                label.style.color = "#ffcc00"; 
             } else {
                 icon.innerText = "🔐";
                 val.style.display = "none";
                 icon.style.display = "block";
-                label.innerText = "Coffre Secret";
+                label.innerText = "Coffre Secret (Gains)";
                 label.style.color = "#aaa";
             }
         }
 
-        // --- AFFICHAGE PRINCIPAL ---
         function updateDisplay() {
             const now = new Date();
             document.getElementById('date-info').innerText = now.toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
             
-            // Mise à jour de la valeur (même si cachée)
             document.getElementById('total-display').innerText = Math.round(data.totalTreasure) + " €";
             
             let remaining = 80 - data.currentSpend;
@@ -259,15 +332,22 @@
             const bat = document.getElementById('battery');
             bat.style.width = percent + "%";
             
-            if(percent > 50) bat.style.background = "#00ff88"; 
-            else if(percent > 20) bat.style.background = "#ffcc00"; 
-            else bat.style.background = "#ff4444"; 
+            bat.classList.remove('critical-blink'); 
+            if(remaining <= 20) {
+                bat.style.background = "#ff4444"; 
+                bat.classList.add('critical-blink');
+            } else if(percent > 50) {
+                bat.style.background = "#00ff88"; 
+            } else {
+                bat.style.background = "#ffcc00"; 
+            }
 
             let dogs = [document.getElementById('img-hurricane'), document.getElementById('img-gears'), document.getElementById('img-eira')];
             if(remaining <= 0) dogs.forEach(d => d.classList.add('sad-dog'));
             else dogs.forEach(d => d.classList.remove('sad-dog'));
 
-            document.getElementById('anecdote').innerText = "💡 Le savais-tu ? " + anecdotes[now.getDate() % anecdotes.length];
+            // Utilisation de la nouvelle fonction pour choisir l'anecdote
+            document.getElementById('anecdote').innerText = "💡 " + getDailyAnecdote();
 
             const isSaturday = now.getDay() === 6;
             const todayStr = now.toLocaleDateString();
@@ -283,20 +363,26 @@
             renderHistory();
         }
 
-        // --- COMPTE A REBOURS ---
         function updateCountdown() {
             const now = new Date();
             let nextSat = new Date();
             nextSat.setDate(now.getDate() + (6 - now.getDay() + 7) % 7);
             nextSat.setHours(0,0,0,0);
             if(now.getDay() === 6) nextSat.setDate(now.getDate() + 7);
-
             const diff = nextSat - now;
             const d = Math.floor(diff / 86400000);
             const h = Math.floor((diff % 86400000) / 3600000);
             const m = Math.floor((diff % 3600000) / 60000);
             const s = Math.floor((diff % 60000) / 1000);
             document.getElementById('timer').innerText = `${d}j ${h}h ${m}m ${s}s`;
+        }
+
+        function showDogMessage() {
+            const bubble = document.getElementById('dog-bubble');
+            const msg = dogMessages[Math.floor(Math.random() * dogMessages.length)];
+            bubble.innerText = msg;
+            bubble.classList.add('bubble-visible');
+            setTimeout(() => { bubble.classList.remove('bubble-visible'); }, 3000);
         }
 
         function addExpense() {
@@ -306,7 +392,6 @@
 
             if (val > 0) {
                 data.currentSpend += val;
-                data.totalTreasure -= val; // Ça peut devenir négatif si elle part de 0, mais c'est logique pour une trésorerie
                 data.history.push({
                     amount: val,
                     note: nInput.value || "Dépense diverse",
@@ -315,6 +400,7 @@
                 pInput.value = ""; nInput.value = "";
                 save();
                 spawnEffect(['💰', '🪙', '💸', '💳']);
+                showDogMessage();
             }
         }
 
@@ -322,7 +408,6 @@
             if(data.history.length > 0 && confirm("Vraiment annuler le dernier achat ?")) {
                 let last = data.history.pop();
                 data.currentSpend -= last.amount;
-                data.totalTreasure += last.amount;
                 save();
             }
         }
@@ -389,7 +474,7 @@
             if(v[0] === v[1] && v[1] === v[2]) {
                 msg.innerText = "🥳 INCROYABLE ! JACKPOT +10€ !";
                 msg.style.color = "#00ff88";
-                data.totalTreasure += 10;
+                data.totalTreasure += 10; 
                 spawnEffect(['🥳', '🎉', '✨', '🎊', '🎈']);
             } else {
                 msg.innerText = "😢 Pas cette fois... Mais Hurricane t'aime !";
