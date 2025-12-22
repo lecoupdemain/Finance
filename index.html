@@ -16,30 +16,39 @@
         }
         .card { 
             background: rgba(0, 0, 0, 0.75); border-radius: 25px; padding: 15px; 
-            margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.2);
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             position: relative; z-index: 2;
         }
-        .dogs-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 10px; }
-        .dog-thumb { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #00ff88; object-fit: cover; transition: 0.3s; }
+        .dogs-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 8px; }
+        .dog-thumb { width: 65px; height: 65px; border-radius: 50%; border: 3px solid #00ff88; object-fit: cover; }
         .sad-dog { filter: grayscale(100%); transform: scale(0.9); border-color: #ff4444; }
         
-        .treasure-val { font-size: 3.2rem; color: #00ff88; font-weight: 900; margin: 0; }
-        .battery-container { border: 2px solid rgba(255,255,255,0.3); border-radius: 15px; height: 30px; margin: 15px 0; background: rgba(0,0,0,0.5); overflow: hidden; }
+        .treasure-val { font-size: 3rem; color: #00ff88; font-weight: 900; margin: 0; }
+        .battery-container { border: 2px solid rgba(255,255,255,0.3); border-radius: 15px; height: 25px; margin: 12px 0; background: rgba(0,0,0,0.5); overflow: hidden; }
         .battery-fill { height: 100%; width: 100%; transition: width 0.8s; background: #00ff88; }
         
-        .btn-valider { width: 100%; padding: 18px; border-radius: 18px; border: none; background: #00ff88; color: #1a1a1a; font-weight: 900; font-size: 1.2rem; margin-bottom: 10px; }
-        .btn-undo { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ff9f0a; background: rgba(255, 159, 10, 0.1); color: #ff9f0a; font-weight: bold; margin-bottom: 10px; }
-        .btn-history { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); color: #aaa; font-size: 0.8rem; background: none; }
-
-        #slot-trigger { display: none; width: 100%; padding: 18px; border-radius: 18px; border: 3px solid #ffcc00; background: linear-gradient(45deg, #d4af37, #f44336); color: white; font-weight: 900; margin-top: 10px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        /* ICI : La ligne partagée pour Prix et Note */
+        .input-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .input-row input { padding: 15px; border-radius: 15px; border: none; font-size: 1rem; color: black; background: white; }
+        #expense { flex: 1; min-width: 80px; }
+        #note { flex: 2; }
         
-        .countdown-timer { font-family: monospace; font-size: 1rem; color: #00d4ff; font-weight: bold; margin: 5px 0; }
-        .anecdote-box { font-size: 0.85rem; font-style: italic; color: #ffcc00; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .btn-valider { width: 100%; padding: 18px; border-radius: 18px; border: none; background: #00ff88; color: #1a1a1a; font-weight: 900; font-size: 1.2rem; margin-bottom: 10px; }
+        .btn-undo { width: 100%; padding: 10px; border-radius: 12px; border: 1px solid #ff9f0a; background: rgba(255, 159, 10, 0.1); color: #ff9f0a; font-weight: bold; margin-bottom: 10px; font-size: 0.85rem; }
+        
+        #slot-trigger { display: none; width: 100%; padding: 18px; border-radius: 18px; border: 3px solid #ffcc00; background: linear-gradient(45deg, #d4af37, #f44336); color: white; font-weight: 900; margin-top: 10px; animation: pulse 1.5s infinite; }
+        
+        .countdown-timer { font-family: monospace; font-size: 0.9rem; color: #00d4ff; margin: 5px 0; }
+        
+        /* Style pour le dicton bien visible */
+        .anecdote-box { 
+            font-size: 0.95rem; line-height: 1.4; color: #ffcc00; 
+            margin-top: 15px; padding: 12px; border-top: 1px solid rgba(255,255,255,0.15);
+            font-weight: 500;
+        }
 
         #history-modal, #slot-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; overflow-y: auto; padding-top: 50px; }
-        .history-item { background: rgba(255,255,255,0.05); margin: 10px 20px; padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #00ff88; }
         .coin { position: fixed; top: -50px; font-size: 24px; z-index: 1; pointer-events: none; animation: fall linear forwards; }
         @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
     </style>
@@ -52,33 +61,36 @@
             <img src="gears.png" id="img-gears" class="dog-thumb">
             <img src="eira.png" id="img-eira" class="dog-thumb">
         </div>
-        <div id="date-info" style="font-size: 0.8rem; color: #00d4ff; font-weight: bold;"></div>
+        <div id="date-info" style="font-size: 0.8rem; color: #00d4ff; font-weight: bold; text-transform: capitalize;"></div>
         <div class="treasure-val" id="total-display">0 €</div>
         <div id="grade" style="padding: 4px 12px; border-radius: 20px; display: inline-block; background: #00ff88; color: #000; font-weight: bold; font-size: 0.7rem; margin-top: 5px;">Reine du Budget</div>
     </div>
 
     <div class="card">
-        <h3 id="weekly-label" style="margin: 0; font-size: 1.3rem;">Reste : 80 €</h3>
+        <h3 id="weekly-label" style="margin: 0; font-size: 1.2rem;">Reste : 80 €</h3>
         <div class="battery-container"><div class="battery-fill" id="battery"></div></div>
         
-        <input type="number" id="expense" placeholder="Prix €" style="width:90%; padding:15px; border-radius:15px; border:none; margin-bottom:12px; font-size:1.1rem;" inputmode="decimal">
-        <input type="text" id="note" placeholder="C'était quoi ?" style="width:90%; padding:12px; border-radius:15px; border:none; margin-bottom:12px; font-size:1rem;">
+        <div class="input-row">
+            <input type="number" id="expense" placeholder="Prix €" inputmode="decimal">
+            <input type="text" id="note" placeholder="C'était quoi ?">
+        </div>
         
         <button class="btn-valider" onclick="addExpense()">VALIDER L'ACHAT 🚀</button>
         <button class="btn-undo" onclick="undoLast()">ANNULER LE DERNIER ↩️</button>
-        <button class="btn-history" onclick="toggleHistory(true)">📜 VOIR L'HISTORIQUE</button>
+        <button class="btn-history" onclick="toggleHistory(true)" style="background:none; border:none; color:#aaa; font-size:0.8rem; text-decoration:underline;">📜 Voir l'historique</button>
         
         <button id="slot-trigger" onclick="openSlot()">🎰 MACHINE À SOUS DISPO !</button>
         
         <div id="countdown-area">
-            <div id="timer" class="countdown-timer">00j 00h 00m 00s</div>
+            <div id="timer" class="countdown-timer">00j 00h 00m 00s avant le Casino</div>
         </div>
+        
         <div id="anecdote" class="anecdote-box"></div>
     </div>
 
     <div id="history-modal">
         <span onclick="toggleHistory(false)" style="position:fixed; top:20px; right:30px; font-size:3rem; color:red;">×</span>
-        <h2 style="color:#00d4ff; text-align:center;">Historique</h2>
+        <h2 style="color:#00d4ff; text-align:center;">Archives</h2>
         <div id="history-list"></div>
     </div>
 
@@ -90,14 +102,21 @@
             <div id="r3" style="background:white; width:70px; height:90px; border-radius:10px; color:black; font-size:40px; display:flex; justify-content:center; align-items:center;">❓</div>
         </div>
         <button onclick="spin()" id="spin-btn" style="padding:15px 40px; border-radius:30px; border:none; background:#ffcc00; font-weight:bold; font-size:1.2rem;">TIRER !</button>
-        <button onclick="closeSlot()" style="display:block; margin:30px auto; color:white; background:none; border:none; text-decoration:underline;">Fermer</button>
+        <button onclick="closeSlot()" style="display:block; margin:20px auto; color:white; background:none; border:none;">Fermer</button>
     </div>
 
     <script>
-        let storageKey = 'cohen_final_v7';
+        let storageKey = 'cohen_final_v8';
         let data = JSON.parse(localStorage.getItem(storageKey)) || { totalTreasure: 125, currentSpend: 0, history: [], lastBonusDate: null };
 
-        const anecdotes = ["Hurricane comprend 250 mots, il sait quand tu achètes des croquettes ! 🐶", "Sourire libère de l'endorphine, même Gears le fait ! 😊", "Regarder des photos d'Eira améliore la concentration. ✨"];
+        const anecdotes = [
+            "Hurricane te surveille : il sait que si tu économises, il aura plus de friandises ! 🐶",
+            "Sourire libère de l'endorphine. Gears le fait tous les matins, pourquoi pas toi ? 😊",
+            "Le savais-tu ? Les chiens rêvent de leurs propriétaires. Tu es l'héroïne des rêves d'Eira ! 🤍",
+            "Chaque euro économisé est un petit pas de plus vers la liberté totale. Courage ! 🚀",
+            "La vie est plus belle quand on la regarde avec les yeux d'un chien : tout est une fête ! 🐾",
+            "Un petit plaisir par jour éloigne la grisaille. Mais un gros trésor, ça rassure ! 💰"
+        ];
 
         function updateDisplay() {
             const now = new Date();
@@ -112,7 +131,7 @@
             if(remaining <= 0) dogs.forEach(d => d.classList.add('sad-dog'));
             else dogs.forEach(d => d.classList.remove('sad-dog'));
 
-            document.getElementById('anecdote').innerText = "💡 " + anecdotes[now.getDate() % anecdotes.length];
+            document.getElementById('anecdote').innerText = "💡 Dicton du jour : " + anecdotes[now.getDate() % anecdotes.length];
 
             const isSaturday = now.getDay() === 6;
             if(isSaturday && remaining > 0 && data.lastBonusDate !== now.toLocaleDateString()) {
@@ -126,7 +145,7 @@
 
             let histHtml = "";
             data.history.slice().reverse().forEach(item => {
-                histHtml += `<div class="history-item"><div><b>${item.date}</b><br><small>${item.note}</small></div><div style="color:#ff4444">-${item.amount}€</div></div>`;
+                histHtml += `<div style="background:rgba(255,255,255,0.05); margin:10px 20px; padding:10px; border-radius:10px; display:flex; justify-content:space-between;"><div><b>${item.date}</b><br>${item.note}</div><div style="color:#ff4444">-${item.amount}€</div></div>`;
             });
             document.getElementById('history-list').innerHTML = histHtml || "<p>Aucun achat</p>";
         }
