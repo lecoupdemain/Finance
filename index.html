@@ -54,4 +54,109 @@
         <div class="dogs-row">
             <img src="hurricane.png" id="img-hurricane" class="dog-thumb">
             <img src="gears.png" id="img-gears" class="dog-thumb">
-            <img src="eira.
+            <img src="eira.png" id="img-eira" class="dog-thumb">
+        </div>
+        <div class="treasure-val" id="total-display">0 €</div>
+        <div id="grade" class="grade-badge">Chargement...</div>
+    </div>
+
+    <div class="card">
+        <h3 id="weekly-label" style="margin: 0; font-size: 1.5rem;">Reste : 80 €</h3>
+        <div class="battery-container"><div class="battery-fill" id="battery"></div></div>
+        <div id="dog-message" style="margin-bottom: 15px; font-style: italic;"></div>
+        
+        <div class="input-group">
+            <input type="number" id="expense" placeholder="Prix €" inputmode="decimal">
+            <input type="text" id="note" placeholder="C'était quoi ? 🛍️">
+        </div>
+        
+        <button class="btn-valider" onclick="addExpense()">VALIDER L'ACHAT 🚀</button>
+        <button class="btn-undo" onclick="undoLast()">Annuler l'erreur ↩️</button>
+        <button class="btn-history" onclick="toggleHistory(true)">📜 Historique</button>
+    </div>
+
+    <script>
+        let storageKey = 'cohen_color_v3';
+        let data = JSON.parse(localStorage.getItem(storageKey)) || {
+            totalTreasure: 125,
+            currentSpend: 0,
+            history: [],
+            lastResetWeek: null
+        };
+
+        function save() { localStorage.setItem(storageKey, JSON.stringify(data)); updateDisplay(); }
+
+        function updateDisplay() {
+            document.getElementById('total-display').innerText = Math.round(data.totalTreasure) + " €";
+            let remaining = Math.max(0, 80 - data.currentSpend);
+            document.getElementById('weekly-label').innerText = "Reste : " + remaining.toFixed(2) + " €";
+            
+            let percentRemaining = (remaining / 80 * 100);
+            const battery = document.getElementById('battery');
+            battery.style.width = percentRemaining + "%";
+            battery.classList.remove('critical-blink');
+
+            let grade = document.getElementById('grade');
+            let msg = document.getElementById('dog-message');
+            let dogs = [document.getElementById('img-hurricane'), document.getElementById('img-gears'), document.getElementById('img-eira')];
+
+            // Logique de couleur demandée (basée sur le pourcentage consommé)
+            let percentUsed = 100 - percentRemaining;
+
+            if (percentUsed < 50) {
+                battery.style.background = "#00ff88"; // Vert (Tout va bien)
+                grade.innerText = "👑 Reine du Budget";
+                grade.style.background = "#00ff88";
+                msg.innerText = "✨ Tout est parfait !";
+                dogs.forEach(d => d.classList.remove('sad-dog'));
+            } 
+            else if (percentUsed >= 50 && percentUsed < 75) {
+                battery.style.background = "#ffff00"; // Jaune
+                grade.innerText = "🧐 Vigilance";
+                grade.style.background = "#ffff00";
+                msg.innerText = "On surveille le budget...";
+                dogs.forEach(d => d.classList.remove('sad-dog'));
+            }
+            else if (percentUsed >= 75 && percentUsed < 90) {
+                battery.style.background = "#ff9f0a"; // Orange
+                grade.innerText = "⚠️ Attention";
+                grade.style.background = "#ff9f0a";
+                msg.innerText = "Hurricane commence à stresser !";
+                dogs.forEach(d => d.classList.remove('sad-dog'));
+            }
+            else {
+                battery.style.background = "#ff4444"; // Rouge
+                battery.classList.add('critical-blink'); // Clignotant
+                grade.innerText = "🚨 Alerte Rouge";
+                grade.style.background = "#ff4444";
+                msg.innerText = "C'est la crise ! Hurricane pleure !";
+                dogs.forEach(d => d.classList.add('sad-dog'));
+            }
+        }
+
+        function addExpense() {
+            let p = document.getElementById('expense');
+            let n = document.getElementById('note');
+            let val = parseFloat(p.value);
+            if (val > 0) {
+                data.currentSpend += val;
+                data.totalTreasure -= val;
+                data.history.push({ amount: val, note: n.value || "Achat", date: new Date().toLocaleDateString() });
+                p.value = ""; n.value = "";
+                save();
+            }
+        }
+
+        function undoLast() {
+            if (data.history.length > 0) {
+                let last = data.history.pop();
+                data.currentSpend -= last.amount;
+                data.totalTreasure += last.amount;
+                save();
+            }
+        }
+
+        updateDisplay();
+    </script>
+</body>
+</html>
