@@ -1,482 +1,497 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Trésor Cohen</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Trésor Cohen</title>
+    <style>
+        /* --- CONFIGURATION GLOBALE --- */
+        :root { --safe-top: env(safe-area-inset-top); --main-green: #00ff88; --main-gold: #ffcc00; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: url('fond.jpg') no-repeat center center fixed;
+            background-size: cover; color: white; text-align: center; margin: 0; 
+            padding: calc(var(--safe-top) + 10px) 15px 30px 15px; min-height: 100vh;
+            overflow-x: hidden;
+            box-sizing: border-box;
+        }
 
-<style>
-/* --- VARIABLES & BASE --- */
-:root {
-    --safe-top: env(safe-area-inset-top, 0px);
-    --green: #00ff88;
-    --gold: #ffcc00;
-    --red: #ff4444;
-}
+        /* --- CARTES ET DESIGN --- */
+        .card { 
+            background: rgba(0, 0, 0, 0.75); border-radius: 22px; padding: 18px; 
+            margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.15);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative; z-index: 2;
+        }
 
-* { box-sizing: border-box; }
+        /* --- SECTION CHIENS & BULLE --- */
+        .dogs-container { position: relative; margin-bottom: 10px; }
+        .dogs-row { display: flex; justify-content: center; gap: 15px; }
+        .dog-thumb { 
+            width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--main-green); 
+            object-fit: cover; transition: all 0.5s ease; 
+        }
+        .sad-dog { filter: grayscale(100%) brightness(0.8); transform: scale(0.9); border-color: #ff4444; }
 
-body {
-    margin: 0;
-    padding: calc(var(--safe-top) + 10px) 15px 30px;
-    min-height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: url("fond.jpg") no-repeat center center fixed;
-    background-size: cover;
-    color: white;
-    text-align: center;
-    overflow-x: hidden;
-}
+        .dog-bubble {
+            position: absolute; top: -35px; left: 50%; transform: translateX(-50%) scale(0);
+            background: white; color: black; padding: 8px 15px; border-radius: 15px;
+            font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10; pointer-events: none;
+            min-width: 120px;
+        }
+        .dog-bubble::after {
+            content: ''; position: absolute; bottom: -6px; left: 50%; margin-left: -6px;
+            border-width: 6px 6px 0; border-style: solid; border-color: white transparent transparent transparent;
+        }
+        .bubble-visible { transform: translateX(-50%) scale(1); }
 
-/* --- CARTES --- */
-.card {
-    background: rgba(0,0,0,0.85);
-    border-radius: 22px;
-    padding: 18px;
-    margin-bottom: 15px;
-    border: 1px solid rgba(255,255,255,0.15);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    position: relative;
-    z-index: 2;
-}
-@supports (backdrop-filter: blur(20px)) {
-    .card {
-        background: rgba(0,0,0,0.65);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-    }
-}
+        /* --- COFFRE FORT --- */
+        .safe-box { cursor: pointer; padding: 10px; border-radius: 15px; transition: transform 0.2s; user-select: none; }
+        .safe-box:active { transform: scale(0.95); }
+        .safe-icon { font-size: 3.5rem; display: block; margin-bottom: 5px; text-shadow: 0 0 20px rgba(255, 204, 0, 0.4); }
+        .treasure-val { 
+            font-size: 3.2rem; color: var(--main-gold); font-weight: 800; margin: 5px 0; 
+            letter-spacing: -1px; text-shadow: 0 0 20px rgba(255,204,0,0.3); display: none; 
+        }
+        .safe-label { font-size: 0.9rem; color: #aaa; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; }
+        .date-display { font-size: 0.85rem; color: #00d4ff; font-weight: 700; text-transform: capitalize; opacity: 0.9; margin-bottom: 10px; }
 
-/* --- CHIENS & BULLES --- */
-.dogs-container { position: relative; margin-bottom: 10px; }
-.dogs-row { display: flex; justify-content: center; gap: 15px; }
-.dog {
-    width: 70px; height: 70px; border-radius: 50%;
-    border: 3px solid var(--green); object-fit: cover; transition: 0.4s;
-}
-.dog.sad { filter: grayscale(100%) brightness(0.8); border-color: var(--red); }
+        /* --- JAUGE BATTERIE --- */
+        .battery-container { 
+            border: 2px solid rgba(255,255,255,0.2); border-radius: 12px; height: 28px; 
+            margin: 15px 0; background: rgba(0,0,0,0.6); overflow: hidden; position: relative; 
+        }
+        .battery-fill { height: 100%; width: 100%; transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1); background: var(--main-green); }
+        
+        @keyframes blink-red {
+            0% { opacity: 1; background: #ff4444; box-shadow: 0 0 5px #ff4444; }
+            50% { opacity: 0.6; background: #ff0000; box-shadow: 0 0 15px #ff0000; }
+            100% { opacity: 1; background: #ff4444; box-shadow: 0 0 5px #ff4444; }
+        }
+        .critical-blink { animation: blink-red 1s infinite; }
 
-.dog-bubble {
-    position: absolute; top: -40px; left: 50%; transform: translateX(-50%) scale(0);
-    background: white; color: black; padding: 8px 15px; border-radius: 15px;
-    font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10; pointer-events: none;
-    min-width: 140px;
-}
-.dog-bubble::after {
-    content: ''; position: absolute; bottom: -6px; left: 50%; margin-left: -6px;
-    border-width: 6px 6px 0; border-style: solid; border-color: white transparent transparent transparent;
-}
-.bubble-visible { transform: translateX(-50%) scale(1); }
+        /* --- INPUTS --- */
+        .input-row { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; }
+        .input-wrapper-price { flex: 0 0 35%; } 
+        .input-wrapper-note { flex: 1; } 
+        
+        input { 
+            width: 100%; padding: 16px; border-radius: 14px; border: none; 
+            font-size: 1rem; color: #1a1a1a; background: rgba(255,255,255,0.95); 
+            font-weight: 500; box-sizing: border-box; -webkit-appearance: none;
+        }
+        input:focus { outline: 2px solid var(--main-green); background: white; }
 
-/* --- COFFRE FORT --- */
-.safe { cursor: pointer; user-select: none; padding: 10px; transition: transform 0.1s; }
-.safe:active { transform: scale(0.95); }
-.safe-value { font-size: 3rem; color: var(--gold); font-weight: 800; display: none; text-shadow: 0 0 15px rgba(255, 204, 0, 0.5); }
-.safe-label { font-size: 0.85rem; color: #aaa; text-transform: uppercase; font-weight: bold; margin-top: 5px; }
-.date-display { color: #00d4ff; font-weight: bold; margin-bottom: 10px; text-transform: capitalize; }
+        /* --- BOUTONS --- */
+        .btn-valider { 
+            width: 100%; padding: 18px; border-radius: 16px; border: none; 
+            background: var(--main-green); color: #05331e; font-weight: 900; 
+            font-size: 1.1rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0,255,136,0.4);
+        }
+        .btn-undo { 
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ff9f0a; 
+            background: rgba(255, 159, 10, 0.15); color: #ff9f0a; font-weight: 700; font-size: 0.9rem; margin-bottom: 10px;
+        }
+        .link-history { background: none; border: none; color: #aaa; text-decoration: underline; font-size: 0.85rem; padding: 10px; }
 
-/* --- BATTERIE & ALERTES --- */
-.battery {
-    height: 28px; border-radius: 12px; overflow: hidden;
-    background: rgba(0,0,0,0.6); border: 2px solid rgba(255,255,255,0.2);
-    margin: 10px 0;
-}
-.battery-fill { height: 100%; width: 100%; background: var(--green); transition: width 0.5s ease; }
+        /* --- CASINO --- */
+        #slot-trigger { 
+            display: none; width: 100%; padding: 20px; border-radius: 18px; 
+            border: 3px solid var(--main-gold); 
+            background: linear-gradient(135deg, #b8860b, #d93838); 
+            color: white; font-weight: 900; font-size: 1.1rem;
+            margin-top: 15px; animation: pulse 2s infinite; 
+            text-shadow: 0 2px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 20px rgba(217, 56, 56, 0.5);
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 
-@keyframes blink { 0% { opacity: 1; background: #ff4444; } 50% { opacity: 0.5; background: #ff0000; } 100% { opacity: 1; background: #ff4444; } }
-.battery-fill.critical { animation: blink 1s infinite; }
+        .countdown-area { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .timer { font-family: 'Courier New', monospace; font-weight: bold; color: #00d4ff; letter-spacing: 1px; }
 
-/* --- INPUTS (FLEX) --- */
-.inputs { display: flex; gap: 10px; margin: 15px 0; width: 100%; }
-.input-wrapper-price { flex: 0 0 35%; }
-.input-wrapper-note { flex: 1; }
+        /* --- ANECDOTE --- */
+        .anecdote-box { 
+            background: rgba(255, 204, 0, 0.1); border-radius: 12px; padding: 12px; margin-top: 15px;
+            font-style: italic; color: #ffeeb0; font-size: 0.9rem; line-height: 1.4; border: 1px solid rgba(255, 204, 0, 0.2);
+        }
 
-input {
-    width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 1rem;
-    background: rgba(255,255,255,0.9); color: black; -webkit-appearance: none;
-}
-input:focus { outline: 2px solid var(--green); background: white; }
+        /* --- PARTICLES & ANIMATIONS --- */
+        .particle { position: fixed; top: -50px; font-size: 28px; z-index: 9999; pointer-events: none; animation: fall linear forwards; }
+        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
 
-/* --- BOUTONS --- */
-button {
-    width: 100%; padding: 16px; border-radius: 16px; border: none;
-    font-weight: 800; font-size: 1rem; margin-bottom: 10px; cursor: pointer;
-}
-.btn-main { background: var(--green); color: #004422; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3); }
-.btn-undo { background: rgba(255,159,10,0.15); color: #ff9f0a; border: 1px solid #ff9f0a; }
+        /* --- MODALS --- */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; overflow-y: auto; padding-top: 40px; }
+        
+        .slot-machine-container { background: #222; padding: 20px; border: 6px solid var(--main-gold); border-radius: 20px; display: flex; gap: 8px; justify-content: center; box-shadow: 0 0 50px rgba(255, 204, 0, 0.3); }
+        .reel { 
+            background: #fff; width: 75px; height: 100px; border-radius: 10px; 
+            font-size: 45px; display: flex; justify-content: center; align-items: center; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3); border: 2px solid #999;
+            transition: filter 1s;
+        }
+        .grayscale-effect { filter: grayscale(100%) opacity(0.6); }
 
-/* --- CASINO --- */
-#slot-trigger {
-    display: none; background: linear-gradient(135deg, #b8860b, #d93838); color: white;
-    border: 3px solid var(--gold); animation: pulse 2s infinite; margin-top: 15px;
-}
-@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
-
-/* --- ANECDOTE --- */
-.anecdote-box {
-    margin-top: 15px; padding: 10px; border-top: 1px solid rgba(255,255,255,0.1);
-    font-style: italic; color: #ffeebb; font-size: 0.9rem; line-height: 1.4;
-}
-
-/* --- PARTICLES --- */
-.particle { position: fixed; top: -50px; font-size: 24px; z-index: 9999; pointer-events: none; animation: fall linear forwards; }
-@keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
-
-/* --- MODALS --- */
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999; overflow-y: auto; padding: 20px; }
-.close { position: fixed; top: 15px; right: 20px; font-size: 2.5rem; background: none; color: white; border: none; width: auto; }
-
-.slot-container { background: #222; padding: 15px; border: 5px solid var(--gold); border-radius: 20px; display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
-.reel { width: 70px; height: 90px; background: white; border-radius: 10px; color: black; font-size: 40px; display: flex; justify-content: center; align-items: center; }
-.grayscale { filter: grayscale(100%) opacity(0.5); }
-
-</style>
+    </style>
 </head>
-
 <body>
 
-<div class="card">
-    <div class="dogs-container">
-        <div id="dogBubble" class="dog-bubble">Wouf !</div>
-        <div class="dogs-row">
-            <img src="hurricane.png" class="dog" id="dog1">
-            <img src="gears.png" class="dog" id="dog2">
-            <img src="eira.png" class="dog" id="dog3">
+    <div class="card">
+        <div class="dogs-container">
+            <div id="dog-bubble" class="dog-bubble">Wouf !</div>
+            <div class="dogs-row">
+                <img src="hurricane.png" id="img-hurricane" class="dog-thumb">
+                <img src="gears.png" id="img-gears" class="dog-thumb">
+                <img src="eira.png" id="img-eira" class="dog-thumb">
+            </div>
+        </div>
+        <div id="date-info" class="date-display"></div>
+
+        <div class="safe-box" onclick="toggleSafeDisplay()">
+            <span id="safe-icon" class="safe-icon">🔐</span>
+            <div class="treasure-val" id="total-display">0 €</div>
+            <div class="safe-label" id="safe-label">Coffre Secret (Gains)</div>
+        </div>
+
+        <div id="grade" style="padding: 5px 15px; border-radius: 20px; display: inline-block; background: var(--main-green); color: #000; font-weight: 800; font-size: 0.75rem; margin-top: 10px;">Reine du Budget</div>
+    </div>
+
+    <div class="card">
+        <h3 id="weekly-label" style="margin: 0; font-size: 1.3rem;">Reste : 80 €</h3>
+        <div class="battery-container"><div class="battery-fill" id="battery"></div></div>
+        
+        <div class="input-row">
+            <div class="input-wrapper-price">
+                <input type="number" id="expense" placeholder="Prix" inputmode="decimal">
+            </div>
+            <div class="input-wrapper-note">
+                <input type="text" id="note" placeholder="C'était quoi ?">
+            </div>
+        </div>
+        
+        <button class="btn-valider" onclick="addExpense()">Valider l'achat 🚀</button>
+        <button class="btn-undo" onclick="undoLast()">Oups, annuler le dernier ↩️</button>
+        <br>
+        <button class="link-history" onclick="toggleHistory(true)">📜 Voir l'historique complet</button>
+        
+        <button id="slot-trigger" onclick="openSlot()">🎰 LE CASINO EST OUVERT !</button>
+        
+        <div id="countdown-area" class="countdown-area">
+            <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 5px;">Prochaine ouverture du Casino :</div>
+            <div id="timer" class="timer">--j --h --m --s</div>
+        </div>
+        
+        <div id="anecdote" class="anecdote-box"></div>
+    </div>
+
+    <div id="history-modal" class="modal">
+        <button onclick="toggleHistory(false)" style="position:fixed; top:20px; right:20px; background:none; border:none; color:white; font-size:2.5rem;">×</button>
+        <h2 style="color:#00d4ff; margin-bottom:30px;">Derniers Achats</h2>
+        <div id="history-list" style="padding: 0 20px; text-align: left;"></div>
+    </div>
+
+    <div id="slot-modal" class="modal" style="justify-content:center; align-items:center; display:none; padding-top:0;">
+        <div style="text-align:center; width: 100%;">
+            <h2 id="slot-title" style="color:var(--main-gold); font-size: 2.2rem; margin-bottom:10px; text-shadow: 0 0 10px #ff9900;">JACKPOT +10€</h2>
+            <p style="color:#ddd; margin-bottom:20px; font-size:0.9rem;">Aligne 3 symboles identiques pour gagner !</p>
+            <div class="slot-machine-container" id="machine-container">
+                <div id="r1" class="reel">❓</div>
+                <div id="r2" class="reel">❓</div>
+                <div id="r3" class="reel">❓</div>
+            </div>
+            <button onclick="spin()" id="spin-btn" style="margin-top:30px; padding:18px 50px; border-radius:40px; background:var(--main-gold); color:black; font-weight:900; font-size:1.3rem; border:none; box-shadow: 0 5px 0 #b8860b; transition: transform 0.1s;">TIRER LE LEVIER !</button>
+            <p id="slot-msg" style="margin-top:25px; color:white; min-height: 30px; font-weight:bold; font-size:1.1rem;"></p>
+            <button onclick="closeSlot()" style="margin-top:20px; color:#aaa; background:none; border:none; text-decoration:underline;">Fermer et revenir</button>
         </div>
     </div>
-    
-    <div class="date-display" id="dateInfo"></div>
 
-    <div class="safe" onclick="toggleSafe()">
-        <div id="safeIcon" style="font-size:3.5rem;">🔐</div>
-        <div class="safe-value" id="safeValue">0 €</div>
-        <div class="safe-label" id="safeLabel">Coffre Secret (Gains)</div>
-    </div>
-</div>
+    <script>
+        const storageKey = 'cohen_encyclopedia_v15';
+        let data = JSON.parse(localStorage.getItem(storageKey)) || { 
+            totalTreasure: 0, 
+            currentSpend: 0, 
+            history: [], 
+            lastBonusDate: null 
+        };
 
-<div class="card">
-    <h3 id="remaining" style="font-size:1.4rem; margin:0 0 10px 0;">Reste : 80 €</h3>
-    <div class="battery"><div class="battery-fill" id="battery"></div></div>
+        let isSafeOpen = false;
 
-    <div class="inputs">
-        <div class="input-wrapper-price">
-            <input id="price" type="number" inputmode="decimal" placeholder="Prix">
-        </div>
-        <div class="input-wrapper-note">
-            <input id="note" type="text" placeholder="C'était quoi ?">
-        </div>
-    </div>
+        // --- BIBLIOTHÈQUE DE 60 ANECDOTES ---
+        const anecdotes = [
+            "Le savais-tu ? L'empreinte de la truffe d'Hurricane est unique, comme une empreinte digitale ! 👃",
+            "Les chiens 'sentent' le temps : ils détectent la baisse de ton odeur pour savoir quand tu rentres. 🕰️",
+            "Si Gears remue la queue vers la droite, il est heureux. Vers la gauche ? Il est inquiet ! 🐕",
+            "Les chiens comprennent environ 165 mots (le niveau d'un enfant de 2 ans) ! 🧠",
+            "Pourquoi leurs coussinets sentent le pop-corn ? C'est à cause d'une petite bactérie inoffensive ! 🍿",
+            "Si tu bâilles et qu'Eira bâille aussi, ce n'est pas la fatigue, c'est de l'empathie ! ❤️",
+            "Un chien entend des sons à une distance 4 fois supérieure à celle d'un humain. 👂",
+            "Les chiens voient en bleu et jaune. Ta balle rouge ? Pour eux, elle est grisâtre ! 🎾",
+            "Les chiens n'ont pas la notion d'argent, mais ils sentent quand tu es stressée par le budget. Zen ! 🧘‍♀️",
+            "Caresser un chien fait baisser ta tension artérielle immédiatement. C'est magique. 💓",
+            "Ton odeur active le 'centre de la récompense' dans le cerveau de tes chiens. Tu es leur drogue ! 😍",
+            "Les chiens dorment en boule pour protéger leurs organes vitaux... un vieil instinct de loup ! 🐺",
+            "Un chien mouillé ne sent pas mauvais pour lui... c'est même un parfum de victoire ! 💦",
+            "Gears peut sentir tes émotions grâce à ta transpiration. Il sait si tu as peur ou si tu es heureuse ! 🕵️‍♂️",
+            "Les moustaches (vibrisses) leur servent à 'voir' dans le noir en sentant les courants d'air. 🌙",
+            "Boire de l'eau, c'est gratuit et ça fait une belle peau. Eira valide cette astuce beauté ! 💧",
+            "Chaque euro économisé aujourd'hui est un petit bout de liberté pour demain. 🚀",
+            "Le chien est le seul animal qui t'aime plus qu'il ne s'aime lui-même. 📜",
+            "L'épargne, c'est comme le dressage : ça demande de la patience, mais ça paye ! 🎓",
+            "Regarder ses chiens jouer est plus relaxant que n'importe quelle série Netflix. 📺",
+            "Les chiens ont trois paupières ! La troisième sert à protéger l'œil et à le garder humide. 👁️",
+            "La nuit, les yeux des chiens brillent grâce au 'tapetum lucidum', un miroir naturel derrière la rétine. 🔦",
+            "Un chien peut localiser la source d'un bruit en 6 centièmes de seconde. Radar sur pattes ! 📡",
+            "Le basenji est la seule race de chien qui ne peut pas aboyer. Mais Hurricane n'est pas un basenji ! 📢",
+            "Les chiens transpirent uniquement par les coussinets de leurs pattes. 🐾",
+            "45% des chiens dorment dans le lit de leur maître. On ne jugera pas Myriam... 🛏️",
+            "Le chocolat est dangereux pour eux, mais pour toi, un petit carré ne coûte pas cher et fait du bien ! 🍫",
+            "Un chien adulte a 42 dents. Toi tu n'en as que 32. Ils gagnent sur ce coup-là ! 🦷",
+            "Gérer son budget, c'est s'offrir la tranquillité d'esprit pour profiter des balades. 🌳",
+            "Le plus vieux chien du monde a vécu 29 ans. Imagine combien de croquettes ça fait ! 🏆",
+            "Les chiens n'aiment pas qu'on leur touche la tête par le dessus (signe de dominance), ils préfèrent le côté ! 👋",
+            "Quand un chien s'appuie contre ta jambe, c'est pour te dire 'Je suis là, protège-moi' ou 'Je te protège'. 🛡️",
+            "Les dalmatiens naissent tout blancs, les taches arrivent après. Comme tes économies : ça grandit petit à petit ! ⚪",
+            "Un chien peut apprendre à compter jusqu'à 5. Hurricane peut sûrement compter les friandises ! 1️⃣",
+            "La truffe d'un chien est humide pour mieux capter les molécules d'odeur dans l'air. 💧",
+            "Les chiens rêvent comme nous ! S'ils bougent les pattes en dormant, ils poursuivent un lapin imaginaire. 🐇",
+            "Investir en soi-même est le meilleur rendement possible. Apprends, lis, repose-toi. 📚",
+            "Si tu te sens pauvre, regarde tes chiens. Avec leur amour, tu es milliardaire. 💎",
+            "Les oreilles de Gears sont contrôlées par 18 muscles différents. Il peut les orienter comme des paraboles ! 📡",
+            "L'obésité est le problème n°1 des chiens modernes. Moins de friandises = plus de santé (et d'économies) ! ⚖️",
+            "Un chien heureux remue la queue de façon large, engageant tout son arrière-train. La fameuse 'danse du popotin' ! 💃",
+            "Planifier ses repas à l'avance est l'astuce n°1 pour économiser sur les courses. 🍲",
+            "L'achat impulsif te donne de la dopamine pour 5 minutes. L'épargne te donne de la sérénité pour 5 ans. 🧘",
+            "Les chiens préfèrent les voix aigües et douces. C'est pour ça qu'on leur parle comme à des bébés ! 👶",
+            "Le contact visuel avec Eira libère de l'ocytocine chez toi ET chez elle. C'est chimique ! 🧪",
+            "Un chien fatigué est un chien heureux. Une bonne balade gratuite vaut mieux qu'un jouet cher. 🎾",
+            "Ne jamais faire les courses le ventre vide. Règle d'or pour ne pas craquer ! 🛒",
+            "Les chiens peuvent être droitiers ou gauchers (ou droitiers/gauchers de la patte). Observe-les ! ✋",
+            "Le ronflement de ton chien est la meilleure berceuse du monde (ou pas). 💤",
+            "La règle des 24h : avant d'acheter un truc cher, attends 24h. Souvent, l'envie passe. ⏳",
+            "Les chiens sentent la maladie. Ils sont nos gardiens invisibles. 🚑",
+            "L'argent ne fait pas le bonheur, mais il achète les croquettes, donc c'est quand même important. 🍗",
+            "Faire ses comptes, c'est prendre le pouvoir sur sa vie. Tu es la patronne ! 👩‍💼",
+            "Les chiens n'ont pas de regrets du passé ni de peur du futur. Ils vivent l'instant présent. Sois comme eux. ✨",
+            "Un petit café maison coûte 0,20€. En terrasse : 2,50€. Le choix est vite fait pour le trésor ! ☕",
+            "Si tu as un doute sur un achat, demande-toi : 'Est-ce que Hurricane validerait ça ?' 🤔",
+            "Le bonheur, c'est un rayon de soleil, un chien qui dort et un compte en banque positif. ☀️",
+            "Les chiens de petite taille vivent souvent plus longtemps que les grands. Profite de chaque instant ! ⏳",
+            "Tu es la personne préférée de ton chien dans l'univers entier. Ne l'oublie jamais. 🌍",
+            "Bravo ! Tu as lu toutes les anecdotes. Tu es une experte canine et financière maintenant ! 🎓"
+        ];
 
-    <button class="btn-main" onclick="addExpense()">VALIDER 🚀</button>
-    <button class="btn-undo" onclick="undoExpense()">Oups, annuler ↩️</button>
-    
-    <div style="margin-top:10px;">
-        <span onclick="toggleHistory(true)" style="color:#aaa; text-decoration:underline; font-size:0.85rem;">📜 Voir l'historique</span>
-    </div>
+        const dogMessages = ["T'inquiète, on gère !", "Pas de panique !", "Hurricane valide !", "Miam, croquettes ?", "On t'aime !", "C'est noté !", "Gears surveille...", "Belle gestion !", "Wouf Wouf ! 🐾"];
 
-    <button id="slot-trigger" onclick="openSlot()">🎰 CASINO DU SAMEDI !</button>
-    <div id="countdown" style="font-family:monospace; color:#00d4ff; font-size:0.9rem; margin-top:15px;">--j --h avant le Casino</div>
-
-    <div class="anecdote-box" id="anecdote"></div>
-</div>
-
-<div class="modal" id="historyModal">
-    <button class="close" onclick="toggleHistory(false)">×</button>
-    <h2 style="color:#00d4ff;">Derniers Achats</h2>
-    <div id="historyList"></div>
-</div>
-
-<div class="modal" id="slotModal" style="display:none; justify-content:center; align-items:center;">
-    <div style="text-align:center; width:100%;">
-        <h2 style="color:var(--gold); font-size:2rem; margin-bottom:10px;">JACKPOT +10€</h2>
-        <div class="slot-container" id="slotMachine">
-            <div class="reel" id="r1">❓</div>
-            <div class="reel" id="r2">❓</div>
-            <div class="reel" id="r3">❓</div>
-        </div>
-        <button id="spinBtn" class="btn-main" style="background:var(--gold); color:black;" onclick="spin()">TIRER LE LEVIER !</button>
-        <p id="slotMsg" style="min-height:30px; font-weight:bold; font-size:1.1rem;"></p>
-        <button onclick="document.getElementById('slotModal').style.display='none'" style="background:none; color:#aaa; text-decoration:underline;">Fermer</button>
-    </div>
-</div>
-
-<script>
-const STORAGE_KEY = "cohen_ultimate_fun_v1"; 
-const WEEKLY_LIMIT = 80;
-
-// --- ETAT INITIAL ---
-let state;
-try {
-    state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
-        spent: 0,
-        treasure: 0, // Cagnotte séparée
-        history: [],
-        lastBonusDate: null
-    };
-} catch {
-    state = { spent: 0, treasure: 0, history: [], lastBonusDate: null };
-}
-
-let safeOpen = false;
-
-// --- DONNÉES FUN ---
-const dogMessages = ["T'inquiète !", "On gère !", "Validé !", "Miam !", "On t'aime", "Gears surveille", "Wouf !"];
-const anecdotes = [
-    "L'empreinte de la truffe d'un chien est unique, comme une empreinte digitale.",
-    "Les chiens sentent le temps qui passe grâce à la baisse de ton odeur dans la maison.",
-    "Si Gears remue la queue à droite = Content. À gauche = Inquiet.",
-    "Les chiens comprennent environ 165 mots (comme un bébé de 2 ans).",
-    "Leurs coussinets sentent le pop-corn à cause d'une bactérie naturelle.",
-    "Le bâillement contagieux prouve l'empathie de ton chien pour toi.",
-    "Ils entendent 4x plus loin que nous.",
-    "Ils voient en bleu et jaune, pas en noir et blanc.",
-    "Caresser un chien baisse ta tension artérielle.",
-    "Ton odeur active la zone du plaisir dans leur cerveau.",
-    "Ils dorment en boule pour protéger leurs organes vitaux (instinct de loup).",
-    "Les moustaches leur permettent de 'voir' dans le noir via les courants d'air.",
-    "Boire de l'eau c'est la vie (et c'est gratuit).",
-    "Le chien est le seul être qui t'aime plus que lui-même.",
-    "Regarder un chien dormir est la meilleure thérapie.",
-    "Les chiens ont 3 paupières.",
-    "La nuit, leurs yeux brillent grâce à un miroir naturel derrière la rétine.",
-    "Ils localisent un bruit en 0.06 secondes.",
-    "Ils transpirent seulement par les pattes.",
-    "Le chocolat est non, mais la carotte est oui !",
-    "Un chien adulte a 42 dents (toi 32).",
-    "Gérer son budget, c'est s'offrir de la sérénité.",
-    "Le plus vieux chien a vécu 29 ans.",
-    "Ils n'aiment pas qu'on leur touche le dessus de la tête (signe de dominance).",
-    "S'appuyer contre toi = Câlin de protection.",
-    "Les dalmatiens naissent blancs.",
-    "Ils peuvent apprendre à compter jusqu'à 5.",
-    "La truffe humide capte mieux les odeurs.",
-    "Ils rêvent de lapins quand ils bougent les pattes.",
-    "Investir en soi est le meilleur rendement.",
-    "Tu es la personne préférée de ton chien.",
-    "Les oreilles de Gears ont 18 muscles.",
-    "L'obésité est l'ennemi n°1. Moins de friandises = plus de santé.",
-    "La danse du popotin = Joie extrême.",
-    "Planifier les repas fait économiser gros.",
-    "L'achat impulsif dure 5 min, l'épargne dure toujours.",
-    "Ils préfèrent les voix aigües.",
-    "Le contact visuel libère de l'ocytocine (hormone de l'amour).",
-    "Un chien fatigué est un chien heureux.",
-    "Ne jamais faire les courses le ventre vide.",
-    "Ils peuvent être gauchers ou droitiers.",
-    "Le ronflement canin est une berceuse.",
-    "Règle des 24h : attends avant d'acheter un truc cher.",
-    "Ils sentent la maladie.",
-    "L'argent achète les croquettes, donc c'est important.",
-    "Faire ses comptes, c'est être libre.",
-    "Vis l'instant présent comme eux.",
-    "Un café maison coûte 10x moins cher qu'en terrasse.",
-    "Demande-toi : Hurricane validerait-il cet achat ?",
-    "Bonheur = Soleil + Chien + Compte positif.",
-    "Les petits chiens vivent plus longtemps.",
-    "Tu es leur univers.",
-    "La fidélité d'un chien est éternelle.",
-    "Un chien ne juge jamais tes dépenses, mais il aime quand tu es zen.",
-    "Promener le chien est la salle de sport la moins chère.",
-    "Ils savent quand tu es triste avant même que tu pleures.",
-    "Leur amour ne coûte rien, mais il vaut tout.",
-    "Chaque jour est une nouvelle chance de bien gérer.",
-    "Bravo, tu es une super gestionnaire !",
-    "Fin de la liste, on recommence au début !"
-];
-
-// --- UI UPDATE ---
-function updateUI() {
-    const now = new Date();
-    document.getElementById("dateInfo").textContent = now.toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
-    
-    // Budget Semaine
-    const remaining = Math.max(0, WEEKLY_LIMIT - state.spent);
-    document.getElementById("remaining").textContent = `Reste : ${remaining.toFixed(2)} €`;
-
-    // Batterie
-    const percent = Math.min(100, (remaining / WEEKLY_LIMIT) * 100);
-    const bat = document.getElementById("battery");
-    bat.style.width = percent + "%";
-    
-    // Couleurs & Alerte
-    bat.className = "battery-fill"; // Reset
-    bat.style.background = "#ffcc00"; // Jaune par défaut
-    if(percent > 50) bat.style.background = "#00ff88"; // Vert
-    if(remaining <= 20) {
-        bat.className = "battery-fill critical"; // Rouge Clignotant
-    }
-
-    // Coffre (Cagnotte)
-    document.getElementById("safeValue").textContent = `${Math.round(state.treasure)} €`;
-
-    // Chiens Tristes ?
-    document.querySelectorAll(".dog").forEach(d => d.classList.toggle("sad", remaining <= 0));
-
-    // Anecdote du jour (Jour de l'année)
-    const start = new Date(now.getFullYear(), 0, 0);
-    const diff = now - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    const dayOfYear = Math.floor(diff / oneDay);
-    document.getElementById("anecdote").textContent = "💡 " + anecdotes[dayOfYear % anecdotes.length];
-
-    // Logique Casino Samedi
-    const isSaturday = now.getDay() === 6;
-    const todayStr = now.toLocaleDateString();
-    
-    if(isSaturday && remaining > 0 && state.lastBonusDate !== todayStr) {
-        document.getElementById("slot-trigger").style.display = "block";
-        document.getElementById("countdown").style.display = "none";
-    } else {
-        document.getElementById("slot-trigger").style.display = "none";
-        document.getElementById("countdown").style.display = "block";
-        updateCountdown();
-    }
-}
-
-// --- LOGIQUE METIER ---
-function addExpense() {
-    const priceInput = document.getElementById("price");
-    const noteInput = document.getElementById("note");
-    const value = parseFloat(priceInput.value.replace(",", "."));
-
-    if (!Number.isFinite(value) || value <= 0) return;
-
-    state.spent += value;
-    state.history.push({
-        amount: value,
-        note: noteInput.value || "Dépense",
-        date: new Date().toLocaleString("fr-FR", {day:'numeric', month:'numeric', hour:'2-digit', minute:'2-digit'})
-    });
-
-    priceInput.value = "";
-    noteInput.value = "";
-    save();
-    
-    // Effets Fun
-    spawnParticles(['💸','🪙','🦴']);
-    showDogBubble();
-}
-
-function undoExpense() {
-    if (!state.history.length) return;
-    if(confirm("Annuler la dernière dépense ?")) {
-        const last = state.history.pop();
-        state.spent -= last.amount;
-        save();
-    }
-}
-
-function toggleSafe() {
-    safeOpen = !safeOpen;
-    const icon = document.getElementById("safeIcon");
-    const val = document.getElementById("safeValue");
-    const label = document.getElementById("safeLabel");
-
-    if (safeOpen) {
-        icon.style.display = "none";
-        val.style.display = "block";
-        label.innerText = "Cagnotte Disponible";
-        label.style.color = "#ffcc00";
-    } else {
-        icon.style.display = "block";
-        val.style.display = "none";
-        label.innerText = "Coffre Secret (Gains)";
-        label.style.color = "#aaa";
-    }
-}
-
-// --- FONCTIONS FUN ---
-function showDogBubble() {
-    const b = document.getElementById("dogBubble");
-    b.innerText = dogMessages[Math.floor(Math.random() * dogMessages.length)];
-    b.classList.add("bubble-visible");
-    setTimeout(() => b.classList.remove("bubble-visible"), 3000);
-}
-
-function spawnParticles(chars) {
-    for(let i=0; i<30; i++) {
-        const p = document.createElement("div");
-        p.className = "particle";
-        p.innerText = chars[Math.floor(Math.random()*chars.length)];
-        p.style.left = Math.random() * 100 + "vw";
-        p.style.animationDuration = (Math.random() * 2 + 1) + "s";
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 3000);
-    }
-}
-
-// --- CASINO ---
-function openSlot() {
-    document.getElementById("slotModal").style.display = "flex";
-}
-
-function spin() {
-    const symbols = ['🐶','💎','💰','🦴'];
-    const btn = document.getElementById("spinBtn");
-    const msg = document.getElementById("slotMsg");
-    const reels = [document.getElementById("r1"), document.getElementById("r2"), document.getElementById("r3")];
-
-    btn.disabled = true;
-    btn.style.opacity = 0.5;
-    msg.innerText = "Suspense...";
-    document.getElementById("slotMachine").classList.remove("grayscale");
-
-    let count = 0;
-    let interval = setInterval(() => {
-        reels.forEach(r => r.innerText = symbols[Math.floor(Math.random()*symbols.length)]);
-        count++;
-        if(count > 25) {
-            clearInterval(interval);
-            const res = reels.map(r => r.innerText);
-            
-            if(res[0] === res[1] && res[1] === res[2]) {
-                msg.innerText = "🥳 JACKPOT ! +10€ DANS LE COFFRE !";
-                msg.style.color = "#00ff88";
-                state.treasure += 10;
-                spawnParticles(['🥳','🎉','✨']);
-            } else {
-                msg.innerText = "😢 Pas cette fois... Mais on t'aime !";
-                msg.style.color = "#ffaaaa";
-                document.getElementById("slotMachine").classList.add("grayscale");
-            }
-            
-            state.lastBonusDate = new Date().toLocaleDateString();
-            save();
-            btn.disabled = false;
-            btn.style.opacity = 1;
+        // --- FONCTION DE SÉLECTION INTELLIGENTE ---
+        function getDailyAnecdote() {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), 0, 0);
+            const diff = now - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            const dayOfYear = Math.floor(diff / oneDay);
+            return anecdotes[dayOfYear % anecdotes.length]; // Boucle sur les 60 phrases
         }
-    }, 80);
-}
 
-// --- HISTORIQUE & TIMERS ---
-function toggleHistory(show) {
-    document.getElementById("historyModal").style.display = show ? "block" : "none";
-    if(show) {
-        const list = document.getElementById("historyList");
-        if(state.history.length === 0) list.innerHTML = "<p style='color:#aaa; text-align:center;'>Rien pour l'instant.</p>";
-        else {
+        // --- GESTION DU COFFRE ---
+        function toggleSafeDisplay() {
+            isSafeOpen = !isSafeOpen;
+            const icon = document.getElementById('safe-icon');
+            const val = document.getElementById('total-display');
+            const label = document.getElementById('safe-label');
+            
+            if (isSafeOpen) {
+                icon.innerText = "🔓";
+                val.style.display = "block";
+                icon.style.display = "none";
+                label.innerText = "Cagnotte Disponible";
+                label.style.color = "#ffcc00"; 
+            } else {
+                icon.innerText = "🔐";
+                val.style.display = "none";
+                icon.style.display = "block";
+                label.innerText = "Coffre Secret (Gains)";
+                label.style.color = "#aaa";
+            }
+        }
+
+        function updateDisplay() {
+            const now = new Date();
+            document.getElementById('date-info').innerText = now.toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'});
+            
+            document.getElementById('total-display').innerText = Math.round(data.totalTreasure) + " €";
+            
+            let remaining = 80 - data.currentSpend;
+            document.getElementById('weekly-label').innerText = "Reste : " + remaining.toFixed(2) + " €";
+            
+            let percent = Math.max(0, (remaining / 80) * 100);
+            const bat = document.getElementById('battery');
+            bat.style.width = percent + "%";
+            
+            bat.classList.remove('critical-blink'); 
+            if(remaining <= 20) {
+                bat.style.background = "#ff4444"; 
+                bat.classList.add('critical-blink');
+            } else if(percent > 50) {
+                bat.style.background = "#00ff88"; 
+            } else {
+                bat.style.background = "#ffcc00"; 
+            }
+
+            let dogs = [document.getElementById('img-hurricane'), document.getElementById('img-gears'), document.getElementById('img-eira')];
+            if(remaining <= 0) dogs.forEach(d => d.classList.add('sad-dog'));
+            else dogs.forEach(d => d.classList.remove('sad-dog'));
+
+            // Utilisation de la nouvelle fonction pour choisir l'anecdote
+            document.getElementById('anecdote').innerText = "💡 " + getDailyAnecdote();
+
+            const isSaturday = now.getDay() === 6;
+            const todayStr = now.toLocaleDateString();
+            
+            if(isSaturday && remaining > 0 && data.lastBonusDate !== todayStr) {
+                document.getElementById('slot-trigger').style.display = 'block';
+                document.getElementById('countdown-area').style.display = 'none';
+            } else {
+                document.getElementById('slot-trigger').style.display = 'none';
+                document.getElementById('countdown-area').style.display = 'block';
+                updateCountdown();
+            }
+            renderHistory();
+        }
+
+        function updateCountdown() {
+            const now = new Date();
+            let nextSat = new Date();
+            nextSat.setDate(now.getDate() + (6 - now.getDay() + 7) % 7);
+            nextSat.setHours(0,0,0,0);
+            if(now.getDay() === 6) nextSat.setDate(now.getDate() + 7);
+            const diff = nextSat - now;
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            document.getElementById('timer').innerText = `${d}j ${h}h ${m}m ${s}s`;
+        }
+
+        function showDogMessage() {
+            const bubble = document.getElementById('dog-bubble');
+            const msg = dogMessages[Math.floor(Math.random() * dogMessages.length)];
+            bubble.innerText = msg;
+            bubble.classList.add('bubble-visible');
+            setTimeout(() => { bubble.classList.remove('bubble-visible'); }, 3000);
+        }
+
+        function addExpense() {
+            let pInput = document.getElementById('expense');
+            let nInput = document.getElementById('note');
+            let val = parseFloat(pInput.value);
+
+            if (val > 0) {
+                data.currentSpend += val;
+                data.history.push({
+                    amount: val,
+                    note: nInput.value || "Dépense diverse",
+                    date: new Date().toLocaleDateString('fr-FR') + " " + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})
+                });
+                pInput.value = ""; nInput.value = "";
+                save();
+                spawnEffect(['💰', '🪙', '💸', '💳']);
+                showDogMessage();
+            }
+        }
+
+        function undoLast() {
+            if(data.history.length > 0 && confirm("Vraiment annuler le dernier achat ?")) {
+                let last = data.history.pop();
+                data.currentSpend -= last.amount;
+                save();
+            }
+        }
+
+        function renderHistory() {
+            let list = document.getElementById('history-list');
+            if (data.history.length === 0) {
+                list.innerHTML = "<p style='color:#aaa; text-align:center;'>Aucun achat enregistré.</p>";
+                return;
+            }
             let html = "";
-            state.history.slice().reverse().forEach(item => {
-                html += `<div style="background:rgba(255,255,255,0.1); padding:10px; margin-bottom:10px; border-radius:10px; display:flex; justify-content:space-between;">
-                    <div><b>${item.note}</b><br><small style='color:#ccc'>${item.date}</small></div>
-                    <div style='color:#ff4444; font-weight:bold;'>-${item.amount}€</div>
+            data.history.slice().reverse().forEach(item => {
+                html += `
+                <div style="background:rgba(255,255,255,0.1); margin-bottom:10px; padding:12px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:bold; color:white;">${item.note}</div>
+                        <div style="font-size:0.75rem; color:#ccc;">${item.date}</div>
+                    </div>
+                    <div style="color:#ff4444; font-weight:bold; font-size:1.1rem;">-${item.amount}€</div>
                 </div>`;
             });
             list.innerHTML = html;
         }
-    }
-}
 
-function updateCountdown() {
-    const now = new Date();
-    let next = new Date();
-    next.setDate(now.getDate() + (6 - now.getDay() + 7) % 7);
-    next.setHours(0,0,0,0);
-    if(now.getDay() === 6) next.setDate(now.getDate() + 7);
-    
-    const diff = next - now;
-    const d = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 8640000
+        function spawnEffect(emojis) {
+            for(let i=0; i<40; i++) {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                p.innerText = emojis[Math.floor(Math.random()*emojis.length)];
+                p.style.left = Math.random() * 100 + "vw";
+                p.style.animationDuration = (Math.random() * 2 + 1) + "s";
+                p.style.fontSize = (Math.random() * 20 + 20) + "px";
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 3000);
+            }
+        }
+
+        function spin() {
+            const symbols = ['🐶','💎','💰','🦴'];
+            const btn = document.getElementById('spin-btn');
+            const msg = document.getElementById('slot-msg');
+            const reels = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
+
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+            msg.innerText = "Suspense...";
+            reels.forEach(r => r.classList.remove('grayscale-effect'));
+            
+            let count = 0;
+            let interval = setInterval(() => {
+                reels.forEach(r => r.innerText = symbols[Math.floor(Math.random()*symbols.length)]);
+                count++;
+                if(count > 25) { 
+                    clearInterval(interval);
+                    checkResult(reels, msg);
+                    btn.disabled = false;
+                    btn.style.opacity = "1";
+                }
+            }, 80);
+        }
+
+        function checkResult(reels, msg) {
+            const v = reels.map(r => r.innerText);
+            if(v[0] === v[1] && v[1] === v[2]) {
+                msg.innerText = "🥳 INCROYABLE ! JACKPOT +10€ !";
+                msg.style.color = "#00ff88";
+                data.totalTreasure += 10; 
+                spawnEffect(['🥳', '🎉', '✨', '🎊', '🎈']);
+            } else {
+                msg.innerText = "😢 Pas cette fois... Mais Hurricane t'aime !";
+                msg.style.color = "#ffaaaa";
+                reels.forEach(r => r.classList.add('grayscale-effect'));
+            }
+            data.lastBonusDate = new Date().toLocaleDateString();
+            save();
+        }
+
+        function toggleHistory(show) { document.getElementById('history-modal').style.display = show ? 'block' : 'none'; }
+        function openSlot() { document.getElementById('slot-modal').style.display = 'flex'; }
+        function closeSlot() { document.getElementById('slot-modal').style.display = 'none'; }
+        function save() { localStorage.setItem(storageKey, JSON.stringify(data)); updateDisplay(); }
+        
+        setInterval(updateCountdown, 1000);
+        updateDisplay();
+    </script>
+</body>
+</html>
