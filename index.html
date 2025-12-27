@@ -198,6 +198,7 @@
     <div id="slot-modal" class="modal" style="justify-content:center; align-items:center; display:none; padding-top:0;">
         <div style="text-align:center; width: 100%;">
             <h2 id="slot-title" style="color:var(--main-gold); font-size: 2.2rem; margin-bottom:10px; text-shadow: 0 0 10px #ff9900;">JACKPOT +10€</h2>
+            <div id="attempts-left" style="color:#aaa; margin-bottom:15px; font-weight:bold;">Essais restants : 3</div>
             <p style="color:#ddd; margin-bottom:20px; font-size:0.9rem;">Aligne 3 symboles identiques pour gagner !</p>
             <div class="slot-machine-container" id="machine-container">
                 <div id="r1" class="reel">❓</div>
@@ -211,15 +212,27 @@
     </div>
 
     <script>
-        const storageKey = 'cohen_final_v16';
+        const storageKey = 'cohen_final_v17_fixed'; // Changé pour éviter les conflits
+        
+        // Initialisation des données avec le nouveau compteur
         let data = JSON.parse(localStorage.getItem(storageKey)) || { 
             totalTreasure: 0, 
             currentSpend: 0, 
             history: [], 
-            lastBonusDate: null 
+            lastSpinDate: null, // Date du dernier jeu
+            dailySpins: 0       // Nombre de coups joués ce jour-là
         };
 
+        // On vérifie si on a changé de jour pour remettre le compteur à zéro
+        const todayStr = new Date().toLocaleDateString();
+        if (data.lastSpinDate !== todayStr) {
+            data.dailySpins = 0;
+            data.lastSpinDate = todayStr;
+            localStorage.setItem(storageKey, JSON.stringify(data));
+        }
+
         let isSafeOpen = false;
+        const MAX_SPINS = 3;
 
         const anecdotes = [
             "L'empreinte de la truffe d'un chien est unique au monde, exactement comme une empreinte digitale humaine.",
@@ -322,6 +335,7 @@
             
             document.getElementById('total-display').innerText = Math.round(data.totalTreasure) + " €";
             
+            // Calcul du reste pour la semaine (80 - dépenses)
             let remaining = 80 - data.currentSpend;
             document.getElementById('weekly-label').innerText = "Reste : " + remaining.toFixed(2) + " €";
             
@@ -346,9 +360,10 @@
             document.getElementById('anecdote').innerText = "💡 " + getDailyAnecdote();
 
             const isSaturday = now.getDay() === 6;
-            const todayStr = now.toLocaleDateString();
             
-            if(isSaturday && remaining > 0 && data.lastBonusDate !== todayStr) {
+            // Affichage bouton Casino
+            // On vérifie : si c'est Samedi ET qu'elle a joué moins de 3 fois
+            if(isSaturday && remaining > 0 && data.dailySpins < MAX_SPINS) {
                 document.getElementById('slot-trigger').style.display = 'block';
                 document.getElementById('countdown-area').style.display = 'none';
             } else {
@@ -356,6 +371,10 @@
                 document.getElementById('countdown-area').style.display = 'block';
                 updateCountdown();
             }
+            
+            // Mise à jour du texte des essais restants
+            document.getElementById('attempts-left').innerText = `Essais restants : ${MAX_SPINS - data.dailySpins} / ${MAX_SPINS}`;
+            
             renderHistory();
         }
 
@@ -442,6 +461,14 @@
         }
 
         function spin() {
+            // Sécurité supplémentaire
+            if(data.dailySpins >= MAX_SPINS) {
+                alert("C'est fini pour aujourd'hui ! Reviens samedi prochain.");
+                closeSlot();
+                updateDisplay();
+                return;
+            }
+
             const symbols = ['🐶','💎','💰','🦴'];
             const btn = document.getElementById('spin-btn');
             const msg = document.getElementById('slot-msg');
@@ -461,24 +488,45 @@
                     checkResult(reels, msg);
                     btn.disabled = false;
                     btn.style.opacity = "1";
+                    
+                    // On ferme le bouton si on a atteint la limite
+                    if(data.dailySpins >= MAX_SPINS) {
+                        setTimeout(() => {
+                            if(document.getElementById('slot-modal').style.display === 'flex') {
+                                alert("C'était ton dernier essai !");
+                            }
+                            closeSlot();
+                            updateDisplay();
+                        }, 2000);
+                    }
                 }
             }, 80);
         }
 
         function checkResult(reels, msg) {
+            // On incrémente le compteur de jeux
+            data.dailySpins++;
+            
             const v = reels.map(r => r.innerText);
             if(v[0] === v[1] && v[1] === v[2]) {
                 msg.innerText = "🥳 INCROYABLE ! JACKPOT +10€ !";
                 msg.style.color = "#00ff88";
+                
+                // ICI : On ajoute au COFFRE (totalTreasure) et NON aux dépenses (currentSpend).
+                // Donc les 80€ de budget de la semaine ne bougent pas.
                 data.totalTreasure += 10; 
+                
                 spawnEffect(['🥳', '🎉', '✨', '🎊', '🎈']);
             } else {
                 msg.innerText = "😢 Pas cette fois... Mais Hurricane t'aime !";
                 msg.style.color = "#ffaaaa";
                 reels.forEach(r => r.classList.add('grayscale-effect'));
             }
-            data.lastBonusDate = new Date().toLocaleDateString();
+            
+            data.lastSpinDate = new Date().toLocaleDateString();
             save();
+            // On met à jour l'affichage des essais restants immédiatement
+            document.getElementById('attempts-left').innerText = `Essais restants : ${MAX_SPINS - data.dailySpins} / ${MAX_SPINS}`;
         }
 
         function toggleHistory(show) { document.getElementById('history-modal').style.display = show ? 'block' : 'none'; }
