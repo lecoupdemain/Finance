@@ -1,300 +1,121 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Trésor Cohen</title>
-    <style>
-        /* --- CONFIGURATION GLOBALE --- */
-        :root { --safe-top: env(safe-area-inset-top); --main-green: #00ff88; --main-gold: #ffcc00; }
+<script>
+        const storageKey = 'cohen_final_v19_rollover'; // Nouvelle clé pour activer le budget variable
         
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background: url('fond.jpg') no-repeat center center fixed;
-            background-size: cover; color: white; text-align: center; margin: 0; 
-            padding: calc(var(--safe-top) + 10px) 15px 30px 15px; min-height: 100vh;
-            overflow-x: hidden;
-            box-sizing: border-box;
+        // --- 1. FONCTION : Trouver le Samedi de référence ---
+        function getLastSaturday(date) {
+            const d = new Date(date);
+            const day = d.getDay(); 
+            const diff = (day + 1) % 7;
+            d.setDate(d.getDate() - diff);
+            return d.toLocaleDateString('fr-FR');
         }
 
-        /* --- CARTES ET DESIGN --- */
-        .card { 
-            background: rgba(0, 0, 0, 0.75); border-radius: 22px; padding: 18px; 
-            margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.15);
-            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            position: relative; z-index: 2;
-        }
-
-        /* --- SECTION CHIENS & BULLE --- */
-        .dogs-container { position: relative; margin-bottom: 10px; }
-        .dogs-row { display: flex; justify-content: center; gap: 15px; }
-        .dog-thumb { 
-            width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--main-green); 
-            object-fit: cover; transition: all 0.5s ease; 
-        }
-        .sad-dog { filter: grayscale(100%) brightness(0.8); transform: scale(0.9); border-color: #ff4444; }
-
-        .dog-bubble {
-            position: absolute; top: -35px; left: 50%; transform: translateX(-50%) scale(0);
-            background: white; color: black; padding: 8px 15px; border-radius: 15px;
-            font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 10; pointer-events: none;
-            min-width: 120px;
-        }
-        .dog-bubble::after {
-            content: ''; position: absolute; bottom: -6px; left: 50%; margin-left: -6px;
-            border-width: 6px 6px 0; border-style: solid; border-color: white transparent transparent transparent;
-        }
-        .bubble-visible { transform: translateX(-50%) scale(1); }
-
-        /* --- COFFRE FORT --- */
-        .safe-box { cursor: pointer; padding: 10px; border-radius: 15px; transition: transform 0.2s; user-select: none; }
-        .safe-box:active { transform: scale(0.95); }
-        .safe-icon { font-size: 3.5rem; display: block; margin-bottom: 5px; text-shadow: 0 0 20px rgba(255, 204, 0, 0.4); }
-        .treasure-val { 
-            font-size: 3.2rem; color: var(--main-gold); font-weight: 800; margin: 5px 0; 
-            letter-spacing: -1px; text-shadow: 0 0 20px rgba(255,204,0,0.3); display: none; 
-        }
-        .safe-label { font-size: 0.9rem; color: #aaa; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; }
-        .date-display { font-size: 0.85rem; color: #00d4ff; font-weight: 700; text-transform: capitalize; opacity: 0.9; margin-bottom: 10px; }
-
-        /* --- JAUGE BATTERIE --- */
-        .battery-container { 
-            border: 2px solid rgba(255,255,255,0.2); border-radius: 12px; height: 28px; 
-            margin: 15px 0; background: rgba(0,0,0,0.6); overflow: hidden; position: relative; 
-        }
-        .battery-fill { height: 100%; width: 100%; transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1); background: var(--main-green); }
-        
-        @keyframes blink-red {
-            0% { opacity: 1; background: #ff4444; box-shadow: 0 0 5px #ff4444; }
-            50% { opacity: 0.6; background: #ff0000; box-shadow: 0 0 15px #ff0000; }
-            100% { opacity: 1; background: #ff4444; box-shadow: 0 0 5px #ff4444; }
-        }
-        .critical-blink { animation: blink-red 1s infinite; }
-
-        /* --- INPUTS --- */
-        .input-row { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; }
-        .input-wrapper-price { flex: 0 0 35%; } 
-        .input-wrapper-note { flex: 1; } 
-        
-        input { 
-            width: 100%; padding: 16px; border-radius: 14px; border: none; 
-            font-size: 1rem; color: #1a1a1a; background: rgba(255,255,255,0.95); 
-            font-weight: 500; box-sizing: border-box; -webkit-appearance: none;
-        }
-        input:focus { outline: 2px solid var(--main-green); background: white; }
-
-        /* --- BOUTONS --- */
-        .btn-valider { 
-            width: 100%; padding: 18px; border-radius: 16px; border: none; 
-            background: var(--main-green); color: #05331e; font-weight: 900; 
-            font-size: 1.1rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;
-            box-shadow: 0 4px 15px rgba(0,255,136,0.4);
-        }
-        .btn-undo { 
-            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #ff9f0a; 
-            background: rgba(255, 159, 10, 0.15); color: #ff9f0a; font-weight: 700; font-size: 0.9rem; margin-bottom: 10px;
-        }
-        .link-history { background: none; border: none; color: #aaa; text-decoration: underline; font-size: 0.85rem; padding: 10px; }
-
-        /* --- CASINO --- */
-        #slot-trigger { 
-            display: none; width: 100%; padding: 20px; border-radius: 18px; 
-            border: 3px solid var(--main-gold); 
-            background: linear-gradient(135deg, #b8860b, #d93838); 
-            color: white; font-weight: 900; font-size: 1.1rem;
-            margin-top: 15px; animation: pulse 2s infinite; 
-            text-shadow: 0 2px 2px rgba(0,0,0,0.5);
-            box-shadow: 0 5px 20px rgba(217, 56, 56, 0.5);
-        }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
-
-        .countdown-area { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
-        .timer { font-family: 'Courier New', monospace; font-weight: bold; color: #00d4ff; letter-spacing: 1px; }
-
-        /* --- ANECDOTE --- */
-        .anecdote-box { 
-            background: rgba(255, 204, 0, 0.1); border-radius: 12px; padding: 12px; margin-top: 15px;
-            font-style: italic; color: #ffeeb0; font-size: 0.9rem; line-height: 1.4; border: 1px solid rgba(255, 204, 0, 0.2);
-        }
-
-        /* --- PARTICLES & ANIMATIONS --- */
-        .particle { position: fixed; top: -50px; font-size: 28px; z-index: 9999; pointer-events: none; animation: fall linear forwards; }
-        @keyframes fall { to { transform: translateY(110vh) rotate(720deg); } }
-
-        /* --- MODALS --- */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; overflow-y: auto; padding-top: 40px; }
-        
-        .slot-machine-container { background: #222; padding: 20px; border: 6px solid var(--main-gold); border-radius: 20px; display: flex; gap: 8px; justify-content: center; box-shadow: 0 0 50px rgba(255, 204, 0, 0.3); }
-        .reel { 
-            background: #fff; width: 75px; height: 100px; border-radius: 10px; 
-            font-size: 45px; display: flex; justify-content: center; align-items: center; 
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.3); border: 2px solid #999;
-            transition: filter 1s;
-        }
-        .grayscale-effect { filter: grayscale(100%) opacity(0.6); }
-
-    </style>
-</head>
-<body>
-
-    <div class="card">
-        <div class="dogs-container">
-            <div id="dog-bubble" class="dog-bubble">Wouf !</div>
-            <div class="dogs-row">
-                <img src="hurricane.png" id="img-hurricane" class="dog-thumb">
-                <img src="gears.png" id="img-gears" class="dog-thumb">
-                <img src="eira.png" id="img-eira" class="dog-thumb">
-            </div>
-        </div>
-        <div id="date-info" class="date-display"></div>
-
-        <div class="safe-box" onclick="toggleSafeDisplay()">
-            <span id="safe-icon" class="safe-icon">🔐</span>
-            <div class="treasure-val" id="total-display">0 €</div>
-            <div class="safe-label" id="safe-label">Coffre Secret (Gains)</div>
-        </div>
-
-        <div id="grade" style="padding: 5px 15px; border-radius: 20px; display: inline-block; background: var(--main-green); color: #000; font-weight: 800; font-size: 0.75rem; margin-top: 10px;">Reine du Budget</div>
-    </div>
-
-    <div class="card">
-        <h3 id="weekly-label" style="margin: 0; font-size: 1.3rem;">Reste : 80 €</h3>
-        <div class="battery-container"><div class="battery-fill" id="battery"></div></div>
-        
-        <div class="input-row">
-            <div class="input-wrapper-price">
-                <input type="number" id="expense" placeholder="Prix" inputmode="decimal">
-            </div>
-            <div class="input-wrapper-note">
-                <input type="text" id="note" placeholder="C'était quoi ?">
-            </div>
-        </div>
-        
-        <button class="btn-valider" onclick="addExpense()">Valider l'achat 🚀</button>
-        <button class="btn-undo" onclick="undoLast()">Oups, annuler le dernier ↩️</button>
-        <br>
-        <button class="link-history" onclick="toggleHistory(true)">📜 Voir l'historique complet</button>
-        
-        <button id="slot-trigger" onclick="openSlot()">🎰 LE CASINO EST OUVERT !</button>
-        
-        <div id="countdown-area" class="countdown-area">
-            <div style="font-size: 0.8rem; color: #aaa; margin-bottom: 5px;">Prochaine ouverture du Casino :</div>
-            <div id="timer" class="timer">--j --h --m --s</div>
-        </div>
-        
-        <div id="anecdote" class="anecdote-box"></div>
-    </div>
-
-    <div id="history-modal" class="modal">
-        <button onclick="toggleHistory(false)" style="position:fixed; top:20px; right:20px; background:none; border:none; color:white; font-size:2.5rem;">×</button>
-        <h2 style="color:#00d4ff; margin-bottom:30px;">Derniers Achats</h2>
-        <div id="history-list" style="padding: 0 20px; text-align: left;"></div>
-    </div>
-
-    <div id="slot-modal" class="modal" style="justify-content:center; align-items:center; display:none; padding-top:0;">
-        <div style="text-align:center; width: 100%;">
-            <h2 id="slot-title" style="color:var(--main-gold); font-size: 2.2rem; margin-bottom:10px; text-shadow: 0 0 10px #ff9900;">JACKPOT +10€</h2>
-            <div id="attempts-left" style="color:#aaa; margin-bottom:15px; font-weight:bold;">Essais restants : 3</div>
-            <p style="color:#ddd; margin-bottom:20px; font-size:0.9rem;">Aligne 3 symboles identiques pour gagner !</p>
-            <div class="slot-machine-container" id="machine-container">
-                <div id="r1" class="reel">❓</div>
-                <div id="r2" class="reel">❓</div>
-                <div id="r3" class="reel">❓</div>
-            </div>
-            <button onclick="spin()" id="spin-btn" style="margin-top:30px; padding:18px 50px; border-radius:40px; background:var(--main-gold); color:black; font-weight:900; font-size:1.3rem; border:none; box-shadow: 0 5px 0 #b8860b; transition: transform 0.1s;">TIRER LE LEVIER !</button>
-            <p id="slot-msg" style="margin-top:25px; color:white; min-height: 30px; font-weight:bold; font-size:1.1rem;"></p>
-            <button onclick="closeSlot()" style="margin-top:20px; color:#aaa; background:none; border:none; text-decoration:underline;">Fermer et revenir</button>
-        </div>
-    </div>
-
-    <script>
-        const storageKey = 'cohen_final_v17_fixed'; // Changé pour éviter les conflits
-        
-        // Initialisation des données avec le nouveau compteur
+        // --- 2. INITIALISATION DES DONNÉES ---
+        // On ajoute "weeklyBudget" qui vaut 80 par défaut
         let data = JSON.parse(localStorage.getItem(storageKey)) || { 
             totalTreasure: 0, 
             currentSpend: 0, 
+            weeklyBudget: 80, // NOUVEAU : Le budget peut changer
             history: [], 
-            lastSpinDate: null, // Date du dernier jeu
-            dailySpins: 0       // Nombre de coups joués ce jour-là
+            lastSpinDate: null, 
+            dailySpins: 0,
+            weekRef: getLastSaturday(new Date()) 
         };
 
-        // On vérifie si on a changé de jour pour remettre le compteur à zéro
+        // Si c'est une ancienne sauvegarde sans budget défini, on force 80
+        if (!data.weeklyBudget) data.weeklyBudget = 80;
+
+        // --- 3. GESTION DU CYCLE (Samedi -> Vendredi) ---
+        const currentWeekRef = getLastSaturday(new Date());
+
+        // Si on change de semaine (c'est Samedi !)
+        if (data.weekRef !== currentWeekRef) {
+            // Calcul du reste de la semaine précédente
+            let previousLeftover = data.weeklyBudget - data.currentSpend;
+            
+            let message = "📅 C'est Samedi ! Nouvelle semaine.";
+
+            if (previousLeftover > 0) {
+                // SCÉNARIO : Elle a économisé !
+                // On ajoute le reste aux 80€ de base
+                data.weeklyBudget = 80 + previousLeftover;
+                message += `\n💰 BRAVO ! Tu as économisé ${previousLeftover.toFixed(2)}€.\nTon budget pour cette semaine est de ${data.weeklyBudget}€ ! 🚀`;
+            } else {
+                // SCÉNARIO : Tout dépensé
+                // On repart sur la base de 80€
+                data.weeklyBudget = 80;
+                message += "\nOn repart sur de bonnes bases : 80€ pour la semaine. Courage ! 💪";
+            }
+
+            data.currentSpend = 0;       // On remet les dépenses à 0
+            data.dailySpins = 0;         // On remet le casino à 0
+            data.weekRef = currentWeekRef; // On enregistre la nouvelle date
+            
+            alert(message);
+            localStorage.setItem(storageKey, JSON.stringify(data));
+        }
+
+        // Remise à zéro quotidienne des spins (même semaine)
         const todayStr = new Date().toLocaleDateString();
         if (data.lastSpinDate !== todayStr) {
             data.dailySpins = 0;
-            data.lastSpinDate = todayStr;
-            localStorage.setItem(storageKey, JSON.stringify(data));
+            // On ne touche pas à weekRef ici
         }
 
         let isSafeOpen = false;
         const MAX_SPINS = 3;
 
         const anecdotes = [
-            "L'empreinte de la truffe d'un chien est unique au monde, exactement comme une empreinte digitale humaine.",
-            "Les chiens 'sentent' le temps qui passe grâce à la diminution de ton odeur dans la maison au fil des heures.",
-            "Une étude prouve que si un chien remue la queue vers la droite, il est heureux. Vers la gauche, il est anxieux.",
-            "Les chiens sont capables d'apprendre et de comprendre environ 165 mots, soit le niveau d'un enfant de 2 ans.",
-            "L'odeur de pop-corn des coussinets vient d'une bactérie naturelle appelée Pseudomonas. C'est tout à fait normal !",
-            "Le bâillement contagieux existe chez le chien : s'il bâille après toi, c'est une preuve scientifique d'empathie.",
-            "L'ouïe du chien est 4 fois supérieure à celle de l'homme. Il entend des ultrasons que tu n'imagines même pas.",
-            "Les chiens ne voient pas en noir et blanc, mais en nuances de bleu et de jaune. Le rouge leur apparaît gris.",
-            "Le contact visuel prolongé avec ton chien libère de l'ocytocine (l'hormone de l'amour) chez toi ET chez lui.",
-            "Caresser un chien fait baisser la tension artérielle et ralentit le rythme cardiaque de l'humain.",
-            "Les chiens dorment en boule par instinct de survie ancestral, pour protéger leurs organes vitaux du froid et des prédateurs.",
-            "Les moustaches (vibrisses) sont si sensibles qu'elles détectent les changements de courants d'air pour 'voir' dans le noir.",
-            "Contrairement aux humains, les chiens transpirent uniquement par les coussinets de leurs pattes.",
-            "Un chien adulte possède 42 dents, alors que l'homme n'en a que 32. Ils sont mieux armés pour mâcher !",
-            "Les chiens possèdent une troisième paupière (membrane nictitante) qui protège l'œil et le garde humide.",
-            "La nuit, leurs yeux brillent grâce au 'tapetum lucidum', une couche réfléchissante derrière la rétine qui amplifie la lumière.",
-            "Un chien peut localiser la provenance exacte d'un son en 6 centièmes de seconde.",
-            "Le Basenji est la seule race de chien au monde qui ne peut pas aboyer physiquement. Il émet un son tyrolien.",
-            "Le chocolat contient de la théobromine, une molécule toxique que le foie du chien ne peut pas éliminer.",
-            "Bluey, un bouvier australien, détient le record de longévité : il a vécu jusqu'à 29 ans et 5 mois !",
-            "Tous les dalmatiens naissent entièrement blancs. Leurs taches n'apparaissent qu'après quelques semaines.",
-            "La truffe est humide car le mucus aide à capturer les molécules d'odeur pour les analyser plus efficacement.",
-            "Les chiens rêvent ! S'ils pédalent ou couinent en dormant, ils sont en phase de sommeil paradoxal (REM).",
-            "Les oreilles d'un chien sont contrôlées par 18 muscles indépendants pour s'orienter comme des radars.",
-            "Comme les humains, les chiens peuvent être droitiers ou gauchers (de la patte). Observe avec laquelle il démarre !",
-            "Pour boire, le chien ne 'lappe' pas : il replie sa langue vers l'arrière pour former une cuillère et soulever l'eau.",
-            "L'odorat du chien est 10 000 à 100 000 fois plus puissant que celui de l'homme.",
-            "Les chiens urinent en hauteur lors des promenades pour laisser un message social aux autres : 'Je suis passé par là'.",
-            "Le Lévrier Greyhound est le chien le plus rapide du monde, il peut atteindre 72 km/h.",
-            "Le Terre-Neuve a des pattes palmées, ce qui en fait un nageur-sauveteur exceptionnel.",
-            "Le Chow-Chow et le Shar-Pei sont les seules races à avoir une langue bleue/noire.",
-            "Les colliers à clous ont été inventés par les Grecs pour protéger la gorge des chiens contre les loups.",
-            "Paul McCartney a inséré un sifflement ultrasonique à la fin de la chanson 'A Day in the Life' pour son chien.",
-            "Trois chiens ont survécu au naufrage du Titanic (deux Loulous de Poméranie et un Pékinois).",
-            "Aux États-Unis, le flair du chien de Saint-Hubert est si fiable qu'il est admis comme preuve officielle au tribunal.",
-            "À Moscou, des chiens errants ont appris à prendre le métro pour aller chercher de la nourriture en centre-ville.",
-            "Les Dalmatiens étaient utilisés comme 'chiens de coche' pour courir à côté des calèches et calmer les chevaux.",
-            "Le rythme cardiaque moyen d'un chien est de 60 à 140 battements par minute, bien plus rapide que le nôtre.",
-            "La température corporelle normale d'un chien est entre 38°C et 39°C. Ils sont naturellement plus chauds que nous.",
-            "Les chiens ont environ 1 700 papilles gustatives, contre 9 000 pour les humains. Ils choisissent par l'odeur, pas le goût.",
-            "Les chiens tournent en rond avant de se coucher pour aplatir l'herbe et chasser les insectes (instinct sauvage).",
-            "Si un chien te regarde quand il fait ses besoins, c'est parce qu'il se sent vulnérable et compte sur toi pour le surveiller.",
-            "Chaque chien a un aboiement unique, comme une voix humaine. Tu peux reconnaître le tien les yeux fermés.",
-            "Une étude de 2014 a prouvé que les chiens ressentent réellement de la jalousie si leur maître s'occupe d'un autre.",
-            "Les chiens ont une mémoire épisodique : ils peuvent se souvenir d'événements passés et de lieux spécifiques.",
-            "Une étude suggère que les chiens préfèrent faire leurs besoins en s'alignant sur l'axe magnétique Nord-Sud de la Terre.",
-            "Le halètement est le principal moyen de refroidissement du chien, car il ne peut pas transpirer par la peau.",
-            "La forme des oreilles influence l'ouïe : les oreilles dressées captent mieux les sons lointains que les oreilles tombantes.",
-            "La salive des chiens est alcaline, ce qui aide à protéger leurs dents des caries (mais ne remplace pas le brossage !).",
-            "L'anxiété de séparation vient souvent du fait que le chien, animal de meute, ne comprend pas pourquoi il est laissé seul.",
-            "La théorie du 'mâle dominant' ou 'alpha' envers les humains a été scientifiquement réfutée. Le chien cherche un guide, pas un chef.",
-            "Le nom 'Corgi' vient du gallois 'Cor gi', qui signifie littéralement 'chien nain'.",
-            "Le Caniche n'est pas français à l'origine, mais allemand ! Son nom vient de 'Pudel' (qui aime l'eau).",
-            "Chaser, un Border Collie, détenait le record du monde de mémoire : elle connaissait le nom de 1 022 jouets différents.",
-            "Snoopy est un Beagle. C'est la race de chien la plus utilisée pour la détection dans les aéroports.",
-            "Laika, une chienne errante de Moscou, fut le premier être vivant à orbiter autour de la Terre en 1957.",
-            "Les chiens sentent en 'stéréo' : ils peuvent déterminer de quelle narine vient une odeur pour la localiser.",
-            "Si un chien refuse une nourriture, c'est souvent parce que l'odeur ne lui plaît pas, avant même de l'avoir goûtée.",
-            "L'air 'coupable' d'un chien (oreilles basses) n'est pas du regret, c'est une réaction de peur face à ta colère.",
-            "Félicitations ! Tu connais maintenant 60 faits scientifiques sur les chiens. Tu es incollable !"
+           "L'empreinte de la truffe d'un chien est unique au monde.",
+            "Les chiens sentent le temps qui passe grâce aux odeurs.",
+            "Si un chien remue la queue vers la droite, il est heureux.",
+            "Les chiens comprennent environ 165 mots.",
+            "L'odeur de pop-corn des pattes est naturelle (bactérie Pseudomonas).",
+            "Ton chien peut attraper ton bâillement par empathie.",
+            "L'ouïe du chien est 4 fois supérieure à la tienne.",
+            "Les chiens voient en bleu et jaune, pas en noir et blanc.",
+            "Le contact visuel avec ton chien libère de l'hormone de l'amour.",
+            "Caresser un chien fait baisser ta tension artérielle.",
+            "Le nez du chien est humide pour mieux capter les odeurs.",
+            "Un chien peut localiser un son en 0,06 seconde.",
+            "Le Basenji est le seul chien qui n'aboie pas.",
+            "Les chiens n'aiment pas qu'on leur touche la tête par surprise.",
+            "Un chien fatigué est un chien heureux.",
+            "Les chiens rêvent comme nous (sommeil paradoxal).",
+            "L'odorat du chien est 10 000 fois plus puissant que le nôtre.",
+            "Le Greyhound peut courir jusqu'à 72 km/h.",
+            "Les chiens ont 42 dents, nous en avons 32.",
+            "Les Dalmatiens naissent tout blancs.",
+            "Snoopy est un Beagle.",
+            "Laïka a été dans l'espace avant les humains.",
+            "Les chiens transpirent par les coussinets.",
+            "Le Chow-Chow a une langue bleue.",
+            "Les chiens peuvent être droitiers ou gauchers.",
+            "Un chien peut sentir tes émotions.",
+            "Le plus vieux chien du monde a vécu 29 ans.",
+            "Les chiens n'aiment pas les câlins serrés (stress).",
+            "Ils tournent en rond avant de se coucher par instinct.",
+            "Le Chihuahua est la plus petite race du monde.",
+            "Le Saint-Bernard sauvait les gens dans la neige.",
+            "Les chiens guides sont des super-héros.",
+            "Le Border Collie est considéré comme le chien le plus intelligent.",
+            "Il existe plus de 340 races de chiens.",
+            "Le museau long aide à refroidir l'air inspiré.",
+            "Les chiens préfèrent les voix aiguës.",
+            "Ils peuvent entendre des ultrasons.",
+            "Les chiens ont trois paupières.",
+            "Leur température corporelle est plus élevée que la nôtre (38°C).",
+            "Les chiens n'ont pas la notion du bien et du mal, juste de l'agréable/désagréable.",
+            "Si ton chien s'appuie contre toi, c'est un câlin.",
+            "Les chiens n'aiment pas la pluie car le bruit est amplifié pour eux.",
+            "Le chocolat est toxique pour les chiens.",
+            "Les raisins aussi sont toxiques.",
+            "Un chien peut apprendre à compter jusqu'à 5.",
+            "Ils reconnaissent ton odeur à des kilomètres.",
+            "Le Mastiff peut peser plus de 100 kg.",
+            "Les chiens remuent la queue même en dormant.",
+            "Ils aiment la routine et les horaires fixes.",
+            "Ton chien t'aime plus qu'il ne s'aime lui-même."
         ];
 
         const dogMessages = ["T'inquiète, on gère !", "Pas de panique !", "Hurricane valide !", "Miam, croquettes ?", "On t'aime !", "C'est noté !", "Gears surveille...", "Belle gestion !", "Wouf Wouf ! 🐾"];
@@ -335,15 +156,20 @@
             
             document.getElementById('total-display').innerText = Math.round(data.totalTreasure) + " €";
             
-            // Calcul du reste pour la semaine (80 - dépenses)
-            let remaining = 80 - data.currentSpend;
+            // --- MODIFICATION ICI : On utilise data.weeklyBudget au lieu de 80 ---
+            let remaining = data.weeklyBudget - data.currentSpend;
+            
+            // Affichage du texte Reste
             document.getElementById('weekly-label').innerText = "Reste : " + remaining.toFixed(2) + " €";
             
-            let percent = Math.max(0, (remaining / 80) * 100);
+            // Calcul du pourcentage basé sur le budget variable
+            let percent = Math.max(0, (remaining / data.weeklyBudget) * 100);
+            
             const bat = document.getElementById('battery');
             bat.style.width = percent + "%";
             
             bat.classList.remove('critical-blink'); 
+            // On garde le seuil d'alerte à 20€ (valeur fixe, plus sûr)
             if(remaining <= 20) {
                 bat.style.background = "#ff4444"; 
                 bat.classList.add('critical-blink');
@@ -361,8 +187,7 @@
 
             const isSaturday = now.getDay() === 6;
             
-            // Affichage bouton Casino
-            // On vérifie : si c'est Samedi ET qu'elle a joué moins de 3 fois
+            // Le Casino s'ouvre le samedi si on n'est pas dans le rouge (remaining > 0)
             if(isSaturday && remaining > 0 && data.dailySpins < MAX_SPINS) {
                 document.getElementById('slot-trigger').style.display = 'block';
                 document.getElementById('countdown-area').style.display = 'none';
@@ -372,9 +197,7 @@
                 updateCountdown();
             }
             
-            // Mise à jour du texte des essais restants
             document.getElementById('attempts-left').innerText = `Essais restants : ${MAX_SPINS - data.dailySpins} / ${MAX_SPINS}`;
-            
             renderHistory();
         }
 
@@ -461,7 +284,6 @@
         }
 
         function spin() {
-            // Sécurité supplémentaire
             if(data.dailySpins >= MAX_SPINS) {
                 alert("C'est fini pour aujourd'hui ! Reviens samedi prochain.");
                 closeSlot();
@@ -489,7 +311,6 @@
                     btn.disabled = false;
                     btn.style.opacity = "1";
                     
-                    // On ferme le bouton si on a atteint la limite
                     if(data.dailySpins >= MAX_SPINS) {
                         setTimeout(() => {
                             if(document.getElementById('slot-modal').style.display === 'flex') {
@@ -504,18 +325,13 @@
         }
 
         function checkResult(reels, msg) {
-            // On incrémente le compteur de jeux
             data.dailySpins++;
             
             const v = reels.map(r => r.innerText);
             if(v[0] === v[1] && v[1] === v[2]) {
                 msg.innerText = "🥳 INCROYABLE ! JACKPOT +10€ !";
                 msg.style.color = "#00ff88";
-                
-                // ICI : On ajoute au COFFRE (totalTreasure) et NON aux dépenses (currentSpend).
-                // Donc les 80€ de budget de la semaine ne bougent pas.
                 data.totalTreasure += 10; 
-                
                 spawnEffect(['🥳', '🎉', '✨', '🎊', '🎈']);
             } else {
                 msg.innerText = "😢 Pas cette fois... Mais Hurricane t'aime !";
@@ -525,7 +341,6 @@
             
             data.lastSpinDate = new Date().toLocaleDateString();
             save();
-            // On met à jour l'affichage des essais restants immédiatement
             document.getElementById('attempts-left').innerText = `Essais restants : ${MAX_SPINS - data.dailySpins} / ${MAX_SPINS}`;
         }
 
@@ -537,5 +352,3 @@
         setInterval(updateCountdown, 1000);
         updateDisplay();
     </script>
-</body>
-</html>
